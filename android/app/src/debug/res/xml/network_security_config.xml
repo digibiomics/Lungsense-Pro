@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- DEBUG BUILDS ONLY. The documented development API is plain HTTP.
+     Never ship this to production; configure HTTPS on the backend instead. -->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">3.108.54.191</domain>
+    </domain-config>
+</network-security-config>

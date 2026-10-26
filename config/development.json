@@ -1,0 +1,5 @@
+{
+  "APP_ENV": "development",
+  "API_BASE_URL": "http://3.108.54.191",
+  "GOOGLE_SIGN_IN_ENABLED": "false"
+}

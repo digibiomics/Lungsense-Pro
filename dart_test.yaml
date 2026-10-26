@@ -1,0 +1,4 @@
+tags:
+  backend:
+    # Live API contract tests. Skipped unless explicitly enabled; see README.
+    skip: "Set --dart-define=LS_BACKEND_TESTS=true and run with --tags backend"
