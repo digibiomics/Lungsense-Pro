@@ -27,13 +27,11 @@ const _password = String.fromEnvironment('LS_TEST_PATIENT_PASSWORD');
 void main() {
   final dio = createDio();
   final remote = AuthRemoteDataSource(dio);
-  final skipNoCreds = !_enabled || _email.isEmpty || _password.isEmpty
-      ? 'needs LS_BACKEND_TESTS and patient test credentials'
-      : null;
+  final noCreds = _email.isEmpty || _password.isEmpty;
 
   test('invalid login is rejected with 400/401', () async {
     await expectLater(
-      remote.login('no-such-user@example.invalid', 'Wrong#Password1'),
+      remote.login('no-such-user@example.com', 'Wrong#Password1'),
       throwsA(
         isA<Failure>().having((f) => f.statusCode, 'status', anyOf(400, 401)),
       ),
@@ -49,34 +47,48 @@ void main() {
     );
   }, skip: _enabled ? null : 'LS_BACKEND_TESTS not set');
 
-  test('users/me without a token is 401', () async {
+  // FastAPI's HTTPBearer answers 403 (not 401) when the header is missing.
+  test('users/me without a token is 401/403', () async {
     await expectLater(
       remote.me(),
-      throwsA(isA<Failure>().having((f) => f.statusCode, 'status', 401)),
+      throwsA(
+        isA<Failure>().having((f) => f.statusCode, 'status', anyOf(401, 403)),
+      ),
     );
   }, skip: _enabled ? null : 'LS_BACKEND_TESTS not set');
 
-  test('patient: login, users/me, refresh, admin is forbidden', () async {
-    final tokens = await remote.login(_email, _password);
-    expect(tokens.accessToken, isNotEmpty);
-    expect(tokens.refreshToken, isNotEmpty);
+  test(
+    'patient: login, users/me, refresh, admin is forbidden',
+    () async {
+      // Checked at runtime too, because --run-skipped ignores `skip:`.
+      if (noCreds) {
+        markTestSkipped('needs patient test credentials');
+        return;
+      }
+      final tokens = await remote.login(_email, _password);
+      expect(tokens.accessToken, isNotEmpty);
+      expect(tokens.refreshToken, isNotEmpty);
 
-    final authed = Options(
-      headers: {'Authorization': 'Bearer ${tokens.accessToken}'},
-    );
-    final me = await dio.get<Object?>(ApiEndpoints.me, options: authed);
-    expect(me.statusCode, 200);
-    final body = me.data! as Map;
-    expect(UserRole.fromApi(body['role'] as String?), UserRole.patient);
+      final authed = Options(
+        headers: {'Authorization': 'Bearer ${tokens.accessToken}'},
+      );
+      final me = await dio.get<Object?>(ApiEndpoints.me, options: authed);
+      expect(me.statusCode, 200);
+      final body = me.data! as Map;
+      expect(UserRole.fromApi(body['role'] as String?), UserRole.patient);
 
-    final refreshed = await remote.refresh(tokens.refreshToken);
-    expect(refreshed.accessToken, isNotEmpty);
+      final refreshed = await remote.refresh(tokens.refreshToken);
+      expect(refreshed.accessToken, isNotEmpty);
 
-    try {
-      await dio.get<Object?>(ApiEndpoints.adminDoctors, options: authed);
-      fail('patient must not access admin endpoints');
-    } on DioException catch (e) {
-      expect(ErrorMapper.fromDio(e).statusCode, anyOf(401, 403));
-    }
-  }, skip: skipNoCreds);
+      try {
+        await dio.get<Object?>(ApiEndpoints.adminDoctors, options: authed);
+        fail('patient must not access admin endpoints');
+      } on DioException catch (e) {
+        expect(ErrorMapper.fromDio(e).statusCode, anyOf(401, 403));
+      }
+    },
+    skip: !_enabled || noCreds
+        ? 'needs LS_BACKEND_TESTS and patient test credentials'
+        : null,
+  );
 }

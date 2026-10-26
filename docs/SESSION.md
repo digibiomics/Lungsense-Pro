@@ -39,3 +39,20 @@
 
 ### Handover
 - Next: PROJECT_STATE.md "Next step".
+
+## 2026-10-26 · Session 3 · Live backend check on the user's PC
+
+**Goal:** verify the backend from a machine that can reach it (KI-01) and run the live suite.
+
+### Work done
+- Backend `http://3.108.54.191` reachable: `/health` 200, `/openapi.json` 200 (API v0.3.0), `users/me` without token 403.
+- Probed auth endpoints with fake data: login 400 string `detail`; empty register 422 list; forgot-password 202 neutral message; reset-password 400 "Invalid or expired reset code"; refresh 400; reserved `.invalid` email domains rejected with 422.
+- Upgraded the PC's Flutter 3.41.2 → 3.47.8 (Dart 3.13.7); the project needs Dart ^3.13.7.
+- Aligned `test/backend/auth_api_contract_test.dart` with observed responses: `example.com` test email, 401/403 for missing bearer token, runtime skip of the credential test (`--run-skipped` ignores `skip:`).
+- Checks: `dart format` clean, `flutter analyze` no issues, `flutter test` 121 passed / 1 skipped, live backend suite 3 passed / 1 skipped (no patient credentials).
+
+### Not verified
+- Authenticated flows (no test patient credentials), device builds (KI-12).
+
+### Handover
+- Provide `LS_TEST_PATIENT_EMAIL` / `LS_TEST_PATIENT_PASSWORD` locally to run the credential test.

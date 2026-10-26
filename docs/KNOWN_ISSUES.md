@@ -2,7 +2,7 @@
 
 | ID | Severity | Issue | Action / owner |
 |---|---|---|---|
-| KI-01 | High | Backend `http://3.108.54.191` not reachable from the cloud dev container (egress proxy returns 403). **No endpoint verified live.** All behaviour is tested against mocks. | Run `flutter test --tags backend ...` from a machine that can reach the API (README). |
+| KI-01 | High | Backend `http://3.108.54.191` not reachable from the cloud dev container (egress proxy returns 403). **No endpoint verified live.** All behaviour is tested against mocks. | Run `flutter test --tags backend ...` from a machine that can reach the API (README). 2026-10-26: backend reachable from the user's PC; live auth probes match the app's error handling (400 string detail, 422 list, 202 neutral forgot-password, 400 invalid reset code, 403 for missing bearer token). |
 | KI-02 | High | Admin response schemas, pagination, `PATCH /admin/users/{id}/status` body and allowed values not documented. App parses the list tolerantly (ADR-015) and does not implement the status change (ADR-016). | Backend dev to confirm list shape and status body. |
 | KI-03 | High | Google OAuth not enabled on server; redirect `lungsensepro://auth/callback` not registered in app. Button is disabled; account-type screen is built but only reachable once Google sign-in exists. | Server config, then wire PKCE flow. |
 | KI-04 | Medium | Login 400 "email not confirmed" has no documented `detail.code`; app matches message text. | Backend to confirm code/message. |
