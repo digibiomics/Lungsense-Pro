@@ -7,7 +7,7 @@
 | Current milestone | **M1 Auth foundation: done, awaiting approval** |
 | Next milestone | M2 Registration + email confirmation |
 | Branch | `main` |
-| Latest commit | see `git log -1` (M1 commit: "feat: M1 auth foundation") |
+| Latest commit | `0cfcc4c` feat: M1 auth foundation |
 | App version | 0.1.0+1 |
 
 ## Completed
