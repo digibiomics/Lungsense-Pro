@@ -59,4 +59,42 @@ void main() {
     final s = resolved(RoleSelectionRequired(userWith(role: UserRole.newUser)));
     expect(sessionRedirect(s, Routes.patientHome), Routes.roleSelection);
   });
+
+  test('sign-up and recovery are public; app areas are not', () {
+    final s = resolved(const SignedOut());
+    for (final r in [
+      Routes.signUp,
+      Routes.signUpAccount,
+      Routes.signUpDoctor,
+      Routes.verifyEmail,
+      Routes.forgotPassword,
+      Routes.resetPassword,
+    ]) {
+      expect(sessionRedirect(s, r), isNull, reason: r);
+    }
+    expect(sessionRedirect(s, Routes.roleSelection), Routes.welcome);
+    expect(sessionRedirect(s, '${Routes.adminReview}/d-1'), Routes.welcome);
+  });
+
+  test('signed-in users may use recovery but not sign-up', () {
+    final p = resolved(Authenticated(userWith(role: UserRole.patient)));
+    expect(sessionRedirect(p, Routes.forgotPassword), isNull);
+    expect(sessionRedirect(p, Routes.resetPassword), isNull);
+    expect(sessionRedirect(p, Routes.signUp), Routes.patientHome);
+    expect(sessionRedirect(p, Routes.patientProfile), isNull);
+    expect(sessionRedirect(p, '${Routes.adminReview}/d-1'), Routes.patientHome);
+  });
+
+  test('admin tabs and review stay inside the admin area', () {
+    final a = resolved(Authenticated(userWith(role: UserRole.admin)));
+    expect(sessionRedirect(a, Routes.adminUsers), isNull);
+    expect(sessionRedirect(a, '${Routes.adminReview}/d-1'), isNull);
+    expect(sessionRedirect(a, Routes.doctorPatients), Routes.adminHome);
+  });
+
+  test('role-new users are held on role selection', () {
+    final n = resolved(RoleSelectionRequired(userWith(role: UserRole.newUser)));
+    expect(sessionRedirect(n, Routes.roleSelection), isNull);
+    expect(sessionRedirect(n, Routes.patientHome), Routes.roleSelection);
+  });
 }

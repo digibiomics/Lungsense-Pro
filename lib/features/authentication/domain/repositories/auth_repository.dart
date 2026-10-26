@@ -1,4 +1,5 @@
 import '../entities/app_user.dart';
+import '../entities/registration.dart';
 
 /// Authentication and session operations. Every method throws a
 /// `Failure` (core/errors) on error.
@@ -19,6 +20,22 @@ abstract interface class AuthRepository {
 
   /// `POST /auth/resend-confirmation`. 202 means accepted, not delivered.
   Future<void> resendConfirmation(String email);
+
+  /// `POST /auth/register` (expects 201). Does not sign the user in.
+  Future<void> register(RegistrationRequest request);
+
+  /// `POST /auth/forgot-password` (202, same answer for unknown emails).
+  Future<void> requestPasswordReset(String email);
+
+  /// `POST /auth/reset-password` with `email`, `otp_code`, `new_password`.
+  Future<void> resetPassword({
+    required String email,
+    required String otpCode,
+    required String newPassword,
+  });
+
+  /// `POST /users/me/account-type` for a first-time Google user.
+  Future<AppUser> setAccountType(AccountTypeRequest request);
 
   /// Emits whenever the session is cleared because a refresh was rejected.
   Stream<void> get sessionExpired;

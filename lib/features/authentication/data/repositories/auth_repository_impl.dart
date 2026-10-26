@@ -4,6 +4,7 @@ import '../../../../core/errors/failure.dart';
 import '../../../../core/network/auth_interceptor.dart';
 import '../../../../core/storage/token_storage.dart';
 import '../../domain/entities/app_user.dart';
+import '../../domain/entities/registration.dart';
 import '../../domain/repositories/auth_repository.dart';
 import '../datasources/auth_remote_data_source.dart';
 import '../models/auth_models.dart';
@@ -57,6 +58,29 @@ class AuthRepositoryImpl implements AuthRepository, SessionRefresher {
   @override
   Future<void> resendConfirmation(String email) =>
       _remote.resendConfirmation(email);
+
+  @override
+  Future<void> register(RegistrationRequest request) =>
+      _remote.register(request);
+
+  @override
+  Future<void> requestPasswordReset(String email) =>
+      _remote.forgotPassword(email);
+
+  @override
+  Future<void> resetPassword({
+    required String email,
+    required String otpCode,
+    required String newPassword,
+  }) => _remote.resetPassword(
+    email: email,
+    otpCode: otpCode,
+    newPassword: newPassword,
+  );
+
+  @override
+  Future<AppUser> setAccountType(AccountTypeRequest request) =>
+      _remote.setAccountType(request);
 
   /// Single-flight refresh shared by app start-up and the 401 interceptor.
   @override

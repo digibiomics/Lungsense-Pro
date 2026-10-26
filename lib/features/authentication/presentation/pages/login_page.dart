@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/config/api_config.dart';
 import '../../../../core/routing/routes.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/design_tokens.dart';
@@ -12,6 +11,7 @@ import '../../../../core/widgets/ls_button.dart';
 import '../../../../core/widgets/ls_screen.dart';
 import '../../../../core/widgets/ls_text_field.dart';
 import '../cubit/login_cubit.dart';
+import '../widgets/google_sign_in_button.dart';
 
 /// 02 Sign in (Login.dc.html).
 class LoginPage extends StatefulWidget {
@@ -63,7 +63,7 @@ class _LoginPageState extends State<LoginPage> {
                     style: LsText.subtitle,
                   ),
                   const SizedBox(height: LsSpace.lg),
-                  const _GoogleButton(),
+                  const GoogleSignInButton(),
                   const SizedBox(height: 20),
                   const _OrDivider(),
                   if (state.error != null) ...[
@@ -218,43 +218,6 @@ class _ErrorBanner extends StatelessWidget {
               state.serverMessage ?? 'Something went wrong. Please try again.',
         );
     }
-  }
-}
-
-/// Google sign-in is designed but not enabled on the server yet, so the
-/// entry point is shown disabled and labelled as unavailable.
-class _GoogleButton extends StatelessWidget {
-  const _GoogleButton();
-
-  @override
-  Widget build(BuildContext context) {
-    const enabled = ApiConfig.googleSignInEnabled;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        LsButton(
-          label: 'Continue with Google',
-          variant: LsButtonVariant.secondary,
-          // Wired in milestone M6 once the backend enables Google OAuth.
-          onPressed: null,
-          icon: Text(
-            'G',
-            style: LsText.button.copyWith(
-              color: enabled ? AppColors.text : AppColors.textSecondary,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-        if (!enabled) ...[
-          const SizedBox(height: 6),
-          Text(
-            'Google sign-in isn\'t available yet.',
-            textAlign: TextAlign.center,
-            style: LsText.helper,
-          ),
-        ],
-      ],
-    );
   }
 }
 

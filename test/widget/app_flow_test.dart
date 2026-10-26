@@ -46,8 +46,8 @@ void main() {
       _ => const MockReply(404),
     };
     await launch(t);
-    expect(find.text('Dashboard'), findsOneWidget);
-    expect(find.text('Doctor'), findsOneWidget);
+    expect(find.text('No collections yet'), findsOneWidget);
+    expect(find.text('Patients'), findsOneWidget); // doctor tab bar
   });
 
   testWidgets('invalid stored session is cleared and returns to Welcome', (
@@ -103,9 +103,12 @@ void main() {
     await t.enterText(find.byKey(const Key('login_password')), 'Example#123');
     await t.tap(find.byKey(const Key('login_submit')));
     await t.pumpAndSettle();
-    expect(find.text('Home'), findsOneWidget);
-    expect(find.text('Patient'), findsOneWidget);
+    expect(find.text('Today\'s check-in'), findsOneWidget);
+    expect(find.text('Check-ins'), findsOneWidget); // patient tab bar
 
+    await t.tap(find.text('Profile'));
+    await t.pumpAndSettle();
+    await t.scrollUntilVisible(find.byKey(const Key('sign_out')), 200);
     await t.tap(find.byKey(const Key('sign_out')));
     await t.pumpAndSettle();
     expect(find.text('Create an account'), findsOneWidget);

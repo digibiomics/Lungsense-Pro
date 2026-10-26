@@ -22,29 +22,37 @@ lungsense_pro/
 │   │   └── session_redirect.dart  # route guard (pure)
 │   ├── core/
 │   │   ├── assets/app_assets.dart
-│   │   ├── config/api_config.dart
-│   │   ├── errors/failure.dart
+│   │   ├── config/             # api_config, app_info (version label)
+│   │   ├── errors/             # failure, failure_messages
 │   │   ├── logging/app_logger.dart
 │   │   ├── network/            # api_client, api_endpoints, auth_interceptor, error_mapper
 │   │   ├── routing/routes.dart
 │   │   ├── storage/token_storage.dart
 │   │   ├── theme/              # app_colors, design_tokens, app_theme
 │   │   ├── utils/validators.dart
-│   │   └── widgets/            # ls_button, ls_text_field, ls_banner, ls_screen, brand, upcoming_page
+│   │   └── widgets/            # ls_button, ls_text_field, ls_banner, ls_screen, brand, ls_components, ls_bottom_nav
 │   └── features/
 │       ├── authentication/
-│       │   ├── domain/         # entities (app_user, session_outcome), repositories, usecases
-│       │   ├── data/           # models, datasources, repositories
-│       │   └── presentation/   # cubit (session, login), pages (splash, welcome, login), widgets (role_shell)
+│       │   ├── domain/         # entities (app_user, registration, session_outcome), repositories, usecases
+│       │   ├── data/           # models (auth, request), datasources, repositories
+│       │   └── presentation/   # cubit (session, login), pages (splash, welcome, login),
+│       │                       # widgets (google_sign_in_button, role_scaffold, role_page)
+│       ├── registration/presentation/      # cubits (registration, resend, account_type), role choice,
+│       │                                   # register, register doctor, verify email, role selection
+│       ├── password_recovery/presentation/ # forgot + reset cubits and pages
 │       ├── account_status/presentation/pages/account_status_page.dart
-│       ├── patient/presentation/pages/patient_home_page.dart
-│       ├── doctor/presentation/pages/doctor_dashboard_page.dart
-│       └── admin/presentation/pages/admin_home_page.dart
+│       ├── patient/presentation/pages/     # home, check-ins
+│       ├── doctor/presentation/pages/      # dashboard, patients/sessions lists
+│       ├── profile/presentation/pages/profile_page.dart
+│       └── admin/
+│           ├── domain/         # doctor_application, admin_repository, admin_usecases
+│           ├── data/           # doctor_application_model (tolerant parser), datasource, repository
+│           └── presentation/   # cubits, approvals list, review, users
 ├── test/
 │   ├── helpers/                # fakes.dart (MOCK adapter, in-memory storage), pump.dart
-│   ├── unit/                   # mapper, models, policy, repository, interceptor, use cases, cubits, redirect, storage
-│   ├── widget/                 # login, account status, welcome/splash, full app flow
+│   ├── unit/                   # mapper, models, request bodies, admin parser, policy, repository, interceptor, use cases, cubits, redirect, storage
+│   ├── widget/                 # login, account status, welcome/splash, full app flow, feature flows
 │   └── backend/                # live API contract tests (tag: backend, skipped by default)
-├── android/                    # + mipmaps from handoff, INTERNET permission, debug-only cleartext config
+├── android/                    # + mipmaps + adaptive icon from handoff, INTERNET permission, debug-only cleartext config
 └── ios/                        # + AppIcon.appiconset from handoff
 ```

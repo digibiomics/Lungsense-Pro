@@ -2,6 +2,25 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com). Versions follow `pubspec.yaml`.
 
+## [0.2.0] – 2026-10-26 · M2–M7
+
+### Added
+- Registration: role choice, patient and doctor sign-up, consent, duplicate-email and field-level errors, Check your email with resend cooldown.
+- Password recovery: neutral forgot-password, 6-digit reset with client-only confirm field; Change password from Profile.
+- Role areas with bottom navigation for patient, doctor and admin; shared Profile with pull to refresh.
+- Admin doctor approvals: list with tabs, review, approve, reject with reason.
+- Account-type screen for first-time Google users (`role: new`).
+- Android adaptive launcher icon from the handoff.
+- Shared widgets: status pill, avatar, empty state, panel, key/value row, checkbox tile, choice card, bottom nav.
+- 33 new tests (121 total): request bodies, admin parser, cubits, redirects, full-app flows with mocked HTTP.
+
+### Changed
+- Password-recovery routes are allowed while signed in.
+- `LsPanel` is a `Material` so tappable rows show ink.
+
+### Removed
+- `UpcomingPage` placeholders and the M1 role shells.
+
 ## [0.1.0] – 2026-10-26 · M1 Auth foundation
 
 ### Added

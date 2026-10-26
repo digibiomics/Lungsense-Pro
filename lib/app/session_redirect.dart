@@ -25,6 +25,7 @@ String? sessionRedirect(SessionState state, String location) {
 String? _home(AppUser user, String location) {
   final home = homeFor(user.role);
   if (home == null) return Routes.welcome;
+  if (Routes.passwordRecovery.contains(location)) return null;
   return location == home || location.startsWith('$home/') ? null : home;
 }
 

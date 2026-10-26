@@ -5,7 +5,9 @@ import '../../../../core/network/auth_interceptor.dart';
 import '../../../../core/network/error_mapper.dart';
 import '../../../../core/errors/failure.dart';
 import '../../domain/entities/app_user.dart';
+import '../../domain/entities/registration.dart';
 import '../models/auth_models.dart';
+import '../models/request_models.dart';
 
 /// Calls the documented LungSense Pro auth endpoints. Converts every error
 /// into a `Failure`.
@@ -44,6 +46,47 @@ class AuthRemoteDataSource {
       options: AuthOptions.public(),
     );
   });
+
+  Future<void> register(RegistrationRequest request) => _guard(() async {
+    await _dio.post<Object?>(
+      ApiEndpoints.register,
+      data: RequestModels.register(request),
+      options: AuthOptions.public(),
+    );
+  });
+
+  Future<void> forgotPassword(String email) => _guard(() async {
+    await _dio.post<Object?>(
+      ApiEndpoints.forgotPassword,
+      data: {'email': email},
+      options: AuthOptions.public(),
+    );
+  });
+
+  Future<void> resetPassword({
+    required String email,
+    required String otpCode,
+    required String newPassword,
+  }) => _guard(() async {
+    await _dio.post<Object?>(
+      ApiEndpoints.resetPassword,
+      data: RequestModels.resetPassword(
+        email: email,
+        otpCode: otpCode,
+        newPassword: newPassword,
+      ),
+      options: AuthOptions.public(),
+    );
+  });
+
+  Future<AppUser> setAccountType(AccountTypeRequest request) =>
+      _guard(() async {
+        final r = await _dio.post<Object?>(
+          ApiEndpoints.meAccountType,
+          data: RequestModels.accountType(request),
+        );
+        return UserModel.fromJson(r.data);
+      });
 
   Future<T> _guard<T>(Future<T> Function() call) async {
     try {

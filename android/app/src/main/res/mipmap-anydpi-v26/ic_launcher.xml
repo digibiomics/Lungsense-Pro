@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Adaptive launcher icon (Android 8+). Foreground from the design
+     handoff (adaptive-foreground.png, 1024px scaled to 432px = 108dp at
+     xxxhdpi) on the handoff's white background. Older devices use the
+     legacy mipmap PNGs. -->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background" />
+    <foreground android:drawable="@drawable/ic_launcher_foreground" />
+</adaptive-icon>

@@ -4,6 +4,10 @@ import 'package:get_it/get_it.dart';
 import '../core/network/api_client.dart';
 import '../core/network/auth_interceptor.dart';
 import '../core/storage/token_storage.dart';
+import '../features/admin/data/datasources/admin_remote_data_source.dart';
+import '../features/admin/data/repositories/admin_repository_impl.dart';
+import '../features/admin/domain/repositories/admin_repository.dart';
+import '../features/admin/domain/usecases/admin_usecases.dart';
 import '../features/authentication/data/datasources/auth_remote_data_source.dart';
 import '../features/authentication/data/repositories/auth_repository_impl.dart';
 import '../features/authentication/domain/repositories/auth_repository.dart';
@@ -33,11 +37,23 @@ Future<void> configureDependencies({TokenStorage? storage, Dio? dio}) async {
     ..registerLazySingleton(() => RestoreSession(sl()))
     ..registerLazySingleton(() => SignOut(sl()))
     ..registerLazySingleton(() => ResendConfirmation(sl()))
+    ..registerLazySingleton(() => RegisterAccount(sl()))
+    ..registerLazySingleton(() => RequestPasswordReset(sl()))
+    ..registerLazySingleton(() => ResetPassword(sl()))
+    ..registerLazySingleton(() => CompleteAccountType(sl()))
+    ..registerLazySingleton(() => RefreshProfile(sl()))
+    ..registerSingleton<AdminRepository>(
+      AdminRepositoryImpl(AdminRemoteDataSource(client)),
+    )
+    ..registerLazySingleton(() => ListDoctorApplications(sl()))
+    ..registerLazySingleton(() => ApproveDoctor(sl()))
+    ..registerLazySingleton(() => RejectDoctor(sl()))
     ..registerSingleton<SessionCubit>(
       SessionCubit(
         restoreSession: RestoreSession(repo),
         signOut: SignOut(repo),
         repository: repo,
+        refreshProfile: RefreshProfile(repo),
       ),
     );
 }

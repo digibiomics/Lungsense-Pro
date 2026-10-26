@@ -42,13 +42,16 @@ class SessionCubit extends Cubit<SessionState> {
     required RestoreSession restoreSession,
     required this._signOut,
     required AuthRepository repository,
+    RefreshProfile? refreshProfile,
   }) : _restore = restoreSession,
+       _refreshProfile = refreshProfile ?? RefreshProfile(repository),
        super(const SessionChecking()) {
     _expiredSub = repository.sessionExpired.listen((_) => _onExpired());
   }
 
   final RestoreSession _restore;
   final SignOut _signOut;
+  final RefreshProfile _refreshProfile;
   late final StreamSubscription<void> _expiredSub;
 
   Future<void> restore() async {
@@ -57,6 +60,18 @@ class SessionCubit extends Cubit<SessionState> {
       emit(SessionResolved(await _restore()));
     } on Failure catch (f) {
       emit(SessionRestoreFailed(f));
+    }
+  }
+
+  /// Reloads the profile. Failures other than account restrictions are
+  /// returned to the caller and leave the session unchanged.
+  Future<Failure?> refreshUser() async {
+    try {
+      final outcome = await _refreshProfile();
+      if (!isClosed) emit(SessionResolved(outcome));
+      return null;
+    } on Failure catch (f) {
+      return f;
     }
   }
 

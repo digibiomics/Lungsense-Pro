@@ -51,30 +51,47 @@ presentation ──▶ domain ◀── data
 | Session | Allowed | Otherwise → |
 |---|---|---|
 | Checking / restore failed | `/splash` | `/splash` |
-| Signed out | `/welcome`, `/login`, `/sign-up`, `/forgot-password` | `/welcome` |
-| Active patient | `/patient/**` | `/patient` |
-| Active approved doctor | `/doctor/**` | `/doctor` |
-| Active admin | `/admin/**` | `/admin` |
+| Signed out | `/welcome`, `/login`, `/sign-up`, `/sign-up/account`, `/sign-up/doctor`, `/verify-email`, `/forgot-password`, `/reset-password` | `/welcome` |
+| Active patient | `/patient/**`, `/forgot-password`, `/reset-password` | `/patient` |
+| Active approved doctor | `/doctor/**`, recovery routes | `/doctor` |
+| Active admin | `/admin/**` (incl. `/admin/review/:id`), recovery routes | `/admin` |
 | Restricted (pending/rejected/suspended/deactivated/unknown) | `/account-status` | `/account-status` |
 | Role `new` (Google) | `/role-selection` | `/role-selection` |
 
 Unknown roles or statuses never grant access. Backend authorization stays authoritative.
 
-## API contract (documented, used so far)
+## Screens and routes
 
-| Method | Path | Body | Used in |
+| Route | Screen | Notes |
+|---|---|---|
+| `/sign-up` → `/sign-up/account` → `/sign-up/doctor` | RoleChoice, Register, RegisterDoctor | One `RegistrationCubit` via `ShellRoute`; patients submit on step 2 |
+| `/verify-email?email=&role=` | Check your email | Resend with 60 s cooldown |
+| `/forgot-password?email=` · `/reset-password?email=` | Forgot, Reset | Also used signed-in from Profile |
+| `/role-selection` | Account type (Google `new`) | `AccountTypeCubit` → `session.resolve(outcome)` |
+| `/patient`, `/patient/check-ins`, `/patient/profile` | Patient tabs | `StatefulShellRoute.indexedStack` + `RoleScaffold` |
+| `/doctor`, `/doctor/patients`, `/doctor/sessions`, `/doctor/profile` | Doctor tabs | Collection actions disabled (no API) |
+| `/admin`, `/admin/users`, `/admin/profile` | Admin tabs | `AdminDoctorsCubit..load()` |
+| `/admin/review/:id` | Review doctor | Application passed in `extra`; cold link → "Application not loaded" |
+
+## API contract (documented endpoints and where they are used)
+
+| Method | Path | Body sent | Used in |
 |---|---|---|---|
-| POST | /api/v1/auth/login | email, password | M1 ✅ |
-| POST | /api/v1/auth/refresh | refresh_token | M1 ✅ |
-| GET | /api/v1/users/me | Bearer | M1 ✅ |
-| POST | /api/v1/auth/resend-confirmation | email | M1 ✅ (login banner) |
-| POST | /api/v1/auth/register | see API docs | M2 |
-| POST | /api/v1/auth/forgot-password · reset-password | email · email, otp_code, new_password | M3 |
-| GET/POST | /api/v1/auth/google/authorize-url · token | – | M6 |
-| POST | /api/v1/users/me/account-type | – | M6 |
-| GET/POST/PATCH | /api/v1/admin/doctors · …/approve · …/reject · admin/users/{id}/status | – | M5 |
+| POST | /api/v1/auth/login | email, password | Login |
+| POST | /api/v1/auth/refresh | refresh_token | Restore, 401 retry |
+| GET | /api/v1/users/me | Bearer | Restore, login, Profile refresh |
+| POST | /api/v1/auth/resend-confirmation | email | Login banner, Check your email |
+| POST | /api/v1/auth/register | email, password, full_name, account_type, doctor_profile (doctor, incl. credential_notes) | Sign-up |
+| POST | /api/v1/auth/forgot-password | email | Forgot |
+| POST | /api/v1/auth/reset-password | email, otp_code, new_password (no confirm field) | Reset |
+| POST | /api/v1/users/me/account-type | account_type, full_name, doctor_profile (doctor, no credential_notes) | Role selection |
+| GET | /api/v1/admin/doctors | – | Approvals list (response shape unconfirmed, KI-02) |
+| POST | /api/v1/admin/doctors/{id}/approve | none | Review |
+| POST | /api/v1/admin/doctors/{id}/reject | reason | Review |
+| GET/POST | /api/v1/auth/google/authorize-url · token | – | **Not used** (KI-03) |
+| PATCH | /api/v1/admin/users/{id}/status | undocumented | **Not used** (ADR-016) |
 
-All paths are in `core/network/api_endpoints.dart`. Verified only against mocks so far (KI-01).
+All paths are in `core/network/api_endpoints.dart`; bodies are built only in `RequestModels`. Verified against mocks only (KI-01).
 
 ## Asset inventory
 
@@ -89,7 +106,8 @@ Source: `pro_app/Design and icons/` (never modified). Copied into `assets/images
 | LungSense Pro Medical App Splash Screen.png | 941×1672, opaque | Reference only; Splash page recreates it from the logos |
 | Launcer Icon/android/mipmap-*/ic_launcher.png | 48–192 | → `android/app/src/main/res/mipmap-*/` |
 | Launcer Icon/Assets.xcassets/AppIcon.appiconset | 20–1024 | → `ios/Runner/Assets.xcassets/AppIcon.appiconset/` |
-| Launcer Icon/android/adaptive-foreground.png, appstore.png, playstore.png, AppIcon.icon/ | – | Not yet used (store listing, adaptive icon in M7) |
+| Launcer Icon/android/adaptive-foreground.png | 1024² | Scaled to 432² → `drawable-nodpi/ic_launcher_foreground.png`; `mipmap-anydpi-v26/ic_launcher.xml` on white |
+| appstore.png, playstore.png, AppIcon.icon/ | – | Not used (store listing / iOS 26 Icon Composer) |
 | lungsense-pro-handoff/designs/*.dc.html | – | Layout/copy/state source of truth |
 | lungsense-pro-handoff/lib_snippets/design_tokens.dart | – | Adapted into `core/theme/design_tokens.dart` |
 

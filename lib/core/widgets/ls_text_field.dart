@@ -27,6 +27,7 @@ class LsTextField extends StatefulWidget {
     this.onSubmitted,
     this.inputFormatters,
     this.fieldKey,
+    this.maxLines = 1,
   });
 
   final String label;
@@ -52,6 +53,7 @@ class LsTextField extends StatefulWidget {
   final ValueChanged<String>? onSubmitted;
   final List<TextInputFormatter>? inputFormatters;
   final Key? fieldKey;
+  final int maxLines;
 
   @override
   State<LsTextField> createState() => _LsTextFieldState();
@@ -79,6 +81,8 @@ class _LsTextFieldState extends State<LsTextField> {
           controller: widget.controller,
           enabled: widget.enabled,
           obscureText: _hidden,
+          maxLines: widget.obscure ? 1 : widget.maxLines,
+          minLines: 1,
           enableSuggestions: !widget.obscure,
           autocorrect: false,
           keyboardType: widget.keyboardType,

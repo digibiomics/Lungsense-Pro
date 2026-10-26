@@ -15,6 +15,7 @@ class LsBanner extends StatelessWidget {
     this.actionLabel,
     this.onAction,
     this.actionLoading = false,
+    this.trailing,
   });
 
   final LsBannerTone tone;
@@ -23,6 +24,9 @@ class LsBanner extends StatelessWidget {
   final String? actionLabel;
   final VoidCallback? onAction;
   final bool actionLoading;
+
+  /// Extra content under the text (e.g. link buttons).
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -97,6 +101,10 @@ class LsBanner extends StatelessWidget {
                     ),
                     style: LsText.bannerBody.copyWith(color: textColor),
                   ),
+                  if (trailing != null) ...[
+                    const SizedBox(height: 4),
+                    trailing!,
+                  ],
                   if (actionLabel != null) ...[
                     const SizedBox(height: 8),
                     SizedBox(
