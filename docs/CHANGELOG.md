@@ -2,6 +2,27 @@
 
 Format: [Keep a Changelog](https://keepachangelog.com). Versions follow `pubspec.yaml`.
 
+## [0.3.0] – 2026-10-27 · M9–M12
+
+### Added
+- Admin Users tab: search, paging, suspend (optional reason) and reactivate via `PATCH /admin/users/{id}/status`; a toast only after the server confirms.
+- Patients: list with server search and paging, add patient (hospital reference, age, sex, notes, research consent) with the `409 possible_duplicate` warning and "save anyway", patient detail with its sessions, edit.
+- Collection flow for doctors and patients: start collection, overview, `LsRecorder` for cough (12–15 s) and breathing (25–30 s) with mic level, auto-stop, too-short and import-length checks, presigned upload with progress, server quality check (verbatim reason), retry, playback; symptoms (10 items, 0–3, no preselection, one PUT); clinical context (notes, chest X-ray upload/remove); review with server-reported missing items and confirm sheet; submit result (submitting, success, missing items, failed); read-only session detail with X-ray links.
+- Session history with All/Drafts/Completed filters; doctor dashboard counts, drafts to finish, recent activity, attention banner.
+- Patient home: start or resume today's check-in; My check-ins grouped by week.
+- Shared widgets: `LsCollectionHeader`, `LsStepIcon`/`LsStepRow`, `LsSeverityScale`, `LsConfirmSheet`, `showLsToast`, `LsSearchField`.
+- Packages: record, just_audio, file_picker, path_provider, url_launcher; dev: fake_async.
+- Android `RECORD_AUDIO`; iOS microphone and photo library usage strings.
+- 37 new tests (157 total): recorder state machine, request bodies and parsers, presigned upload, admin/patient/collection/check-in UI flows.
+
+### Changed
+- Approval tabs load each status (`?status=`), so Approved and Rejected are no longer empty.
+- `LsKeyValueRow` labels wrap instead of overflowing.
+- Rejection reason read from `doctor_profile.rejection_reason` (documented location).
+
+### Removed
+- Empty-state placeholder pages for patients, sessions and check-ins.
+
 ## [0.2.0] – 2026-10-26 · M2–M7
 
 ### Added

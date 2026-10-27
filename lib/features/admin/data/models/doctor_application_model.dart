@@ -4,13 +4,15 @@ import '../../domain/entities/doctor_application.dart';
 
 /// Parser for `GET /api/v1/admin/doctors`.
 ///
-/// UNCONFIRMED CONTRACT (KI-02). Accepted shapes:
+/// The OpenAPI spec documents `Page[AdminDoctorOut]` (`items`, `total`,
+/// ...). Earlier builds accepted other shapes before the spec was published
+/// (ADR-015); those are still read:
 /// * a JSON array of items, or
 /// * an object holding the array under `items`, `doctors`, `results` or `data`.
-/// Each item is read with the documented `users/me` field names (`id` or
-/// `user_id`, `email`, `full_name`, `account_status`, `doctor_profile`) plus
-/// optional `created_at` and `rejection_reason`. Anything else fails loudly
-/// instead of being guessed.
+/// Each item is read with the documented field names (`id` or `user_id`,
+/// `email`, `full_name`, `account_status`, `doctor_profile`, `created_at`).
+/// The rejection reason is `doctor_profile.rejection_reason`. Anything else
+/// fails loudly instead of being guessed.
 abstract final class DoctorApplicationModel {
   static const _listKeys = ['items', 'doctors', 'results', 'data'];
 
@@ -56,7 +58,8 @@ abstract final class DoctorApplicationModel {
               credentialNotes: _str(profile['credential_notes']),
             ),
       submittedAt: DateTime.tryParse(_str(m['created_at']) ?? ''),
-      rejectionReason: _str(m['rejection_reason']),
+      rejectionReason:
+          _str(profile?['rejection_reason']) ?? _str(m['rejection_reason']),
     );
   }
 

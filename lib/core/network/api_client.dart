@@ -22,6 +22,18 @@ Dio createDio({String baseUrl = ApiConfig.baseUrl}) {
   return dio;
 }
 
+/// Dio for presigned storage uploads: no base URL, no bearer token, no
+/// JSON default, and a long send timeout for large files. The presigned
+/// URL and its query are never logged.
+Dio createUploadDio() => Dio(
+  BaseOptions(
+    connectTimeout: ApiConfig.connectTimeout,
+    receiveTimeout: ApiConfig.receiveTimeout,
+    sendTimeout: const Duration(minutes: 5),
+    responseType: ResponseType.plain,
+  ),
+);
+
 /// Logs method, path and status only. Bodies and headers are never logged
 /// because they carry passwords, OTPs and tokens.
 class _SafeLogInterceptor extends Interceptor {

@@ -13,6 +13,11 @@ Resolved with Flutter 3.47.8 / Dart 3.13.7 (see `pubspec.lock`).
 | go_router | 18.1.1 | Routing + redirect guard |
 | flutter_secure_storage | 11.2.0 | Tokens in Keychain / Keystore |
 | cupertino_icons | 1.0.9 | Flutter template default |
+| record | 7.1.2 | Microphone recording (AAC/M4A) and input level |
+| just_audio | 0.10.6 | Playback and imported-file duration check |
+| file_picker | 13.3.0 | Import an audio file; attach an X-ray |
+| path_provider | 2.1.x | Temporary folder for recordings |
+| url_launcher | 6.3.3 | Open an X-ray download link |
 
 ## Dev
 
@@ -21,6 +26,7 @@ Resolved with Flutter 3.47.8 / Dart 3.13.7 (see `pubspec.lock`).
 | flutter_test | SDK | Unit/widget tests |
 | integration_test | SDK | Reserved for device integration tests (M7) |
 | mocktail | 1.0.5 | Explicit mocks (labelled in tests) |
+| fake_async | 1.3.3 | Drives the recorder timer and QC polling in unit tests |
 | bloc_test | 10.0.0 | Cubit tests |
 | flutter_lints | 6.0.0 | Lint rules |
 

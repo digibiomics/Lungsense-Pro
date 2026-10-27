@@ -50,7 +50,7 @@ Legend: ✅ done · ⏳ in progress · ⬜ todo · ⛔ blocked
 - ✅ M5-1 Domain/data for list, approve, reject (tolerant list parser, fails loudly on unknown shapes)
 - ✅ M5-2 Approvals list with tabs + review screen + reject reason sheet
 - ✅ M5-3 Users tab explains missing list endpoint / undocumented status body
-- ⛔ M5-4 Change user status (`PATCH /admin/users/{id}/status`): body undocumented (KI-02)
+- ✅ M5-4 Change user status (`PATCH /admin/users/{id}/status`), built in M9
 
 ## M6 Google
 - ✅ M6-1 Account-type screen for `role: new` (`POST /users/me/account-type`, no credential_notes)
@@ -61,6 +61,34 @@ Legend: ✅ done · ⏳ in progress · ⬜ todo · ⛔ blocked
 - ✅ M7-2 Remove `UpcomingPage` placeholders
 - ✅ M7-3 Docs, version 0.2.0+2
 - ⬜ M7-4 Native splash, HTTPS + iOS ATS (KI-05, KI-10)
+
+## M9 Admin users + patients (0.3.0)
+- ✅ M9-1 `GET /admin/users` search + paging, suspend (reason) / reactivate, no self-suspend
+- ✅ M9-2 Approval tabs read `?status=` for pending, active, rejected
+- ✅ M9-3 Patients domain/data (list, get, create with `allow_duplicate`, update)
+- ✅ M9-4 Patient list, Add/Edit patient (reference, age, sex, notes, consent), 409 duplicate banner
+- ✅ M9-5 Patient detail with sessions and Start new collection
+
+## M10 Collection flow (0.3.0)
+- ✅ M10-1 Collection domain/data: sessions, symptoms, audio and X-ray upload tickets, presigned POST, complete, dashboard
+- ✅ M10-2 Device services behind interfaces (record, just_audio, file_picker, url_launcher)
+- ✅ M10-3 `RecorderCubit` state machine + `RecorderPage` (cough, breathing, import validation, QC polling, retry, playback)
+- ✅ M10-4 Overview, Symptoms (10 items), Clinical context (notes, X-ray), Review, Submit result, Session detail
+- ✅ M10-5 Start collection (choose or register patient)
+- ⛔ M10-6 Diagnosis picker: no API field (KI-18)
+- ⛔ M10-7 Descriptors for 8 symptoms: no approved text (KI-19)
+
+## M11 Sessions + dashboard (0.3.0)
+- ✅ M11-1 Session history with filters, grouped by day
+- ✅ M11-2 Dashboard counts, drafts to finish, recent activity
+
+## M12 Patient check-in (0.3.0)
+- ✅ M12-1 Patient home: start or resume today's check-in
+- ✅ M12-2 My check-ins grouped by week; collection screens in patient mode
+
+## M13 Device verification
+- ⬜ M13-1 Record, upload and submit on Android and iOS with a test doctor and a test patient
+- ⬜ M13-2 Confirm KI-17, KI-20, KI-21, KI-22 against real responses
 
 ## M8 Live verification
 - ⬜ M8-1 Run `--tags backend` suite against the test backend

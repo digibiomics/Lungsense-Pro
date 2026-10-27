@@ -10,6 +10,7 @@ import '../features/account_status/presentation/pages/account_status_page.dart';
 import '../features/admin/domain/entities/doctor_application.dart';
 import '../features/admin/domain/usecases/admin_usecases.dart';
 import '../features/admin/presentation/cubit/admin_cubits.dart';
+import '../features/admin/presentation/cubit/admin_users_cubit.dart';
 import '../features/admin/presentation/pages/admin_doctors_page.dart';
 import '../features/admin/presentation/pages/admin_review_page.dart';
 import '../features/admin/presentation/pages/admin_users_page.dart';
@@ -22,13 +23,31 @@ import '../features/authentication/presentation/pages/login_page.dart';
 import '../features/authentication/presentation/pages/splash_page.dart';
 import '../features/authentication/presentation/pages/welcome_page.dart';
 import '../features/authentication/presentation/widgets/role_scaffold.dart';
+import '../features/collection/domain/entities/recording.dart';
+import '../features/collection/domain/repositories/collection_repository.dart';
+import '../features/collection/presentation/cubit/collection_events.dart';
+import '../features/collection/presentation/cubit/collection_session_cubit.dart';
+import '../features/collection/presentation/cubit/list_cubits.dart';
+import '../features/collection/presentation/cubit/recorder_cubit.dart';
+import '../features/collection/presentation/cubit/step_cubits.dart';
+import '../features/collection/presentation/pages/clinical_page.dart';
+import '../features/collection/presentation/pages/recorder_page.dart';
+import '../features/collection/presentation/pages/review_submit_pages.dart';
+import '../features/collection/presentation/pages/session_overview_page.dart';
+import '../features/collection/presentation/pages/sessions_page.dart';
+import '../features/collection/presentation/pages/start_collection_page.dart';
+import '../features/collection/presentation/pages/symptoms_page.dart';
+import '../features/collection/presentation/widgets/collection_mode.dart';
 import '../features/doctor/presentation/pages/doctor_dashboard_page.dart';
-import '../features/doctor/presentation/pages/doctor_lists_pages.dart';
 import '../features/password_recovery/presentation/cubit/password_recovery_cubits.dart';
 import '../features/password_recovery/presentation/pages/forgot_password_page.dart';
 import '../features/password_recovery/presentation/pages/reset_password_page.dart';
-import '../features/patient/presentation/pages/patient_check_ins_page.dart';
 import '../features/patient/presentation/pages/patient_home_page.dart';
+import '../features/patients/domain/usecases/patient_usecases.dart';
+import '../features/patients/presentation/cubit/patient_cubits.dart';
+import '../features/patients/presentation/pages/patient_detail_page.dart';
+import '../features/patients/presentation/pages/patient_form_page.dart';
+import '../features/patients/presentation/pages/patients_page.dart';
 import '../features/profile/presentation/pages/profile_page.dart';
 import '../features/registration/presentation/cubit/account_type_cubit.dart';
 import '../features/registration/presentation/cubit/registration_cubit.dart';
@@ -140,14 +159,41 @@ GoRouter createRouter(SessionCubit session) {
         },
       ),
 
+      // Full-screen routes (no bottom navigation) come before the tab
+      // shells so `/doctor/patients/new` is not read as the Patients tab.
+      ..._doctorScreens(),
+      _sessionRoute(Routes.patientCheckIn, CollectionMode.patient),
+
       _roleShell(RoleNavItems.patient, [
         GoRoute(
           path: Routes.patientHome,
-          builder: (_, _) => const PatientHomePage(),
+          builder: (_, _) => MultiBlocProvider(
+            providers: [
+              BlocProvider(
+                create: (_) => PatientHomeCubit(
+                  sl<CollectionRepository>(),
+                  events: sl<CollectionEvents>(),
+                )..load(),
+              ),
+              BlocProvider(
+                create: (_) => StartSessionCubit(
+                  sl<CollectionRepository>(),
+                  events: sl<CollectionEvents>(),
+                ),
+              ),
+            ],
+            child: const PatientHomePage(),
+          ),
         ),
         GoRoute(
           path: Routes.patientCheckIns,
-          builder: (_, _) => const PatientCheckInsPage(),
+          builder: (_, _) => BlocProvider(
+            create: (_) => SessionsCubit(
+              sl<CollectionRepository>(),
+              events: sl<CollectionEvents>(),
+            )..load(),
+            child: const SessionsPage(mode: CollectionMode.patient),
+          ),
         ),
         GoRoute(
           path: Routes.patientProfile,
@@ -157,15 +203,33 @@ GoRouter createRouter(SessionCubit session) {
       _roleShell(RoleNavItems.doctor, [
         GoRoute(
           path: Routes.doctorDashboard,
-          builder: (_, _) => const DoctorDashboardPage(),
+          builder: (_, _) => BlocProvider(
+            create: (_) => DashboardCubit(
+              sl<CollectionRepository>(),
+              events: sl<CollectionEvents>(),
+            )..load(),
+            child: const DoctorDashboardPage(),
+          ),
         ),
         GoRoute(
           path: Routes.doctorPatients,
-          builder: (_, _) => const DoctorPatientsPage(),
+          builder: (_, _) => BlocProvider(
+            create: (_) => PatientsCubit(
+              sl<ListPatients>(),
+              events: sl<CollectionEvents>(),
+            )..load(),
+            child: const PatientsPage(),
+          ),
         ),
         GoRoute(
           path: Routes.doctorSessions,
-          builder: (_, _) => const DoctorSessionsPage(),
+          builder: (_, _) => BlocProvider(
+            create: (_) => SessionsCubit(
+              sl<CollectionRepository>(),
+              events: sl<CollectionEvents>(),
+            )..load(),
+            child: const SessionsPage(mode: CollectionMode.doctor),
+          ),
         ),
         GoRoute(
           path: Routes.doctorProfile,
@@ -183,7 +247,11 @@ GoRouter createRouter(SessionCubit session) {
         ),
         GoRoute(
           path: Routes.adminUsers,
-          builder: (_, _) => const AdminUsersPage(),
+          builder: (_, _) => BlocProvider(
+            create: (_) =>
+                AdminUsersCubit(sl<ListUsers>(), sl<SetUserStatus>())..load(),
+            child: const AdminUsersPage(),
+          ),
         ),
         GoRoute(
           path: Routes.adminProfile,
@@ -209,6 +277,153 @@ GoRouter createRouter(SessionCubit session) {
             child: const AdminReviewPage(),
           );
         },
+      ),
+    ],
+  );
+}
+
+/// Doctor screens above the tabs: add/edit patient, patient detail, start
+/// collection and the collection flow.
+List<RouteBase> _doctorScreens() => [
+  GoRoute(
+    path: Routes.doctorAddPatient,
+    builder: (_, _) => BlocProvider(
+      create: (_) => PatientFormCubit(sl<SavePatient>(), sl<GetPatient>()),
+      child: const PatientFormPage(),
+    ),
+  ),
+  GoRoute(
+    path: '${Routes.doctorPatient}/:id',
+    builder: (_, state) => BlocProvider(
+      create: (_) => PatientDetailCubit(
+        sl<GetPatient>(),
+        sl<CollectionRepository>(),
+        state.pathParameters['id']!,
+        events: sl<CollectionEvents>(),
+      )..load(),
+      child: const PatientDetailPage(),
+    ),
+    routes: [
+      GoRoute(
+        path: 'edit',
+        builder: (_, state) => BlocProvider(
+          create: (_) => PatientFormCubit(
+            sl<SavePatient>(),
+            sl<GetPatient>(),
+            patientId: state.pathParameters['id'],
+          )..loadInitial(),
+          child: const PatientFormPage(),
+        ),
+      ),
+    ],
+  ),
+  GoRoute(
+    path: Routes.doctorStartCollection,
+    builder: (_, state) => MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) =>
+              PatientsCubit(sl<ListPatients>(), events: sl<CollectionEvents>())
+                ..load(),
+        ),
+        BlocProvider(
+          create: (_) => StartSessionCubit(
+            sl<CollectionRepository>(),
+            events: sl<CollectionEvents>(),
+          ),
+        ),
+      ],
+      child: StartCollectionPage(
+        patientId: state.uri.queryParameters['patient'],
+        studyId: state.uri.queryParameters['study'],
+      ),
+    ),
+  ),
+  _sessionRoute(Routes.doctorSession, CollectionMode.doctor),
+];
+
+/// `<base>/:id` (overview, or read-only detail once completed) and its
+/// steps. Each step reads what it needs from the server.
+GoRoute _sessionRoute(String base, CollectionMode mode) {
+  String id(GoRouterState s) => s.pathParameters['id']!;
+  CollectionSessionCubit sessionCubit(GoRouterState s) =>
+      CollectionSessionCubit(
+        sl<CollectionRepository>(),
+        id(s),
+        events: sl<CollectionEvents>(),
+        opener: sl<DeviceServices>().links,
+      )..load();
+  GoRoute recorder(RecordingType type) => GoRoute(
+    path: type == RecordingType.cough
+        ? CollectionRoute.cough.segment
+        : CollectionRoute.breathing.segment,
+    builder: (_, s) {
+      final devices = sl<DeviceServices>();
+      return BlocProvider(
+        create: (_) => RecorderCubit(
+          repository: sl<CollectionRepository>(),
+          capture: devices.capture(),
+          inspector: devices.inspector,
+          playback: devices.playback(),
+          files: devices.files,
+          sessionId: id(s),
+          type: type,
+          events: sl<CollectionEvents>(),
+        )..load(),
+        child: RecorderPage(type: type, mode: mode),
+      );
+    },
+  );
+
+  return GoRoute(
+    path: '$base/:id',
+    builder: (_, s) => BlocProvider(
+      create: (_) => sessionCubit(s),
+      child: SessionOverviewPage(mode: mode),
+    ),
+    routes: [
+      recorder(RecordingType.cough),
+      recorder(RecordingType.breathing),
+      GoRoute(
+        path: CollectionRoute.symptoms.segment,
+        builder: (_, s) => BlocProvider(
+          create: (_) => SymptomsCubit(
+            sl<CollectionRepository>(),
+            id(s),
+            events: sl<CollectionEvents>(),
+          )..load(),
+          child: SymptomsPage(mode: mode),
+        ),
+      ),
+      GoRoute(
+        path: CollectionRoute.context.segment,
+        builder: (_, s) => BlocProvider(
+          create: (_) => ClinicalCubit(
+            sl<CollectionRepository>(),
+            sl<DeviceServices>().files,
+            id(s),
+            events: sl<CollectionEvents>(),
+          )..load(),
+          child: ClinicalPage(mode: mode),
+        ),
+      ),
+      GoRoute(
+        path: CollectionRoute.review.segment,
+        builder: (_, s) => BlocProvider(
+          create: (_) => sessionCubit(s),
+          child: ReviewPage(mode: mode),
+        ),
+      ),
+      GoRoute(
+        path: CollectionRoute.submit.segment,
+        builder: (_, s) => BlocProvider(
+          create: (_) => SubmitCubit(
+            sl<CollectionRepository>(),
+            id(s),
+            events: sl<CollectionEvents>(),
+          )..submit(),
+          child: SubmitResultPage(mode: mode),
+        ),
       ),
     ],
   );

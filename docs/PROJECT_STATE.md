@@ -2,34 +2,32 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-10-26 |
-| Phase | Feature-complete for every documented endpoint |
-| Current milestone | **M2–M7 done** (user said "complete the app", which approved all remaining milestones) |
-| Next milestone | M8 live verification against the backend (needs a network that reaches it) |
+| Last updated | 2026-10-27 |
+| Phase | Every designed screen built against the OpenAPI snapshot |
+| Current milestone | **M9–M12 done** (user approved building everything still missing without stops) |
+| Next milestone | M13 device verification with test accounts |
 | Branch | `main` |
-| Latest commit | see `git log -1` (M2–M7 commit follows `8594383`) |
-| App version | 0.2.0+2 |
+| Latest commit | see `git log -1` (0.3.0 commit follows `bc083a2`) |
+| App version | 0.3.0+3 |
 
 ## Completed
-- M0 Inspect + plan.
-- M1 Auth foundation (config, Dio, refresh interceptor, secure storage, errors, theme, splash, Welcome, Login, Account status, route guard).
-- M2 Registration: RoleChoice (no preselection), Register, RegisterDoctor, Check your email + resend with 60 s cooldown, duplicate-email handling, field-level 422 errors.
-- M3 Password recovery: Forgot (always neutral), Reset (6-digit code, confirm field client-only, 400 → invalid code, 422 → field error). Also reachable from Profile as "Change password".
-- M4 Role areas with bottom navigation: Patient (Home, Check-ins, Profile), Doctor (Home, Patients, Sessions, Profile), shared Profile from `users/me` with pull-to-refresh. Collection features show honest empty/disabled states.
-- M5 Admin: doctor approvals list (Pending/Approved/Rejected tabs), review screen, approve, reject with reason sheet. Users tab explains why status changes are unavailable.
-- M6 First-time Google user (`role: new`) account-type screen via `POST /users/me/account-type`. Google sign-in itself stays disabled.
-- M7 Hardening: Android adaptive launcher icon, removed placeholder pages, version 0.2.0, docs.
-- Checks: `flutter analyze` no issues; `flutter test` 121 passed, 1 skipped group (live backend).
+- M0–M7: auth, registration, recovery, role areas, admin approvals, account type, hardening (see CHANGELOG 0.1.0, 0.2.0).
+- M9 Admin Users tab (search, suspend with reason, reactivate); approval tabs per status; patients list, add (duplicate check, consent), detail, edit.
+- M10 Collection flow: start collection, overview, cough and breathing recorder (limits, import check, presigned upload, server QC, retry, playback), symptoms (10 items), clinical context (notes, X-ray), review, submit result, read-only session detail.
+- M11 Session history with filters; dashboard counts, drafts, recent activity.
+- M12 Patient home (start/resume today's check-in), My check-ins, collection screens in patient mode.
+- Checks (2026-10-27, user's PC, Flutter 3.47.8): `flutter analyze` no issues; `flutter test` 157 passed, 1 skipped (live backend group).
 
 ## In progress
 - Nothing.
 
 ## Next step (exact)
-1. From a machine that can reach `http://3.108.54.191`, run the live suite (README "Checks") and `flutter run` on a device.
-2. Ask the backend team the open questions in KNOWN_ISSUES (KI-02, KI-03, KI-04, KI-06, KI-07, KI-14).
-3. When the collection API is documented, start M8+ (recording flow).
+1. Ask the product owner the two open questions: where the diagnosis goes (KI-18) and the descriptors for 8 symptoms (KI-19). Symptom text goes in `features/collection/presentation/widgets/symptom_copy.dart`.
+2. With a test doctor and a test patient account, run the app on Android (`flutter run --dart-define-from-file=config/development.json`) and record, upload and submit one session and one check-in (M13). Confirm KI-17, KI-20, KI-21, KI-22.
+3. Patient sign-in live test stays on hold until the user provides credentials.
 
 ## Blockers / open
-- Backend not reachable from the cloud dev container (KI-01): **no endpoint has been verified live.**
-- Admin list response shape and the user-status PATCH body are undocumented (KI-02).
-- Google OAuth not configured on the server (KI-03).
+- KI-18 diagnosis picker has no API field; KI-19 symptom descriptors missing (product owner).
+- Google OAuth not configured on the server (KI-03); sign-in stays disabled.
+- Microphone, file picking, playback and storage upload not yet run on a device (KI-24).
+- API is HTTP (KI-05): no real patient data until HTTPS.

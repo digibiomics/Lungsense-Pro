@@ -1,6 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <!-- Required to reach the LungSense Pro API in every build type. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Cough and breathing recordings (record package). -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <application
         android:label="LungSense Pro"
         android:allowBackup="false"
@@ -43,6 +45,11 @@
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
+        </intent>
+        <!-- X-ray "View" opens its download link in a browser (url_launcher). -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
         </intent>
     </queries>
 </manifest>

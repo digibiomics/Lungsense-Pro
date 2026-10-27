@@ -5,6 +5,7 @@ import 'package:lungsense_pro/app/di.dart';
 import 'package:lungsense_pro/core/network/api_endpoints.dart';
 import 'package:lungsense_pro/features/authentication/presentation/cubit/session_cubit.dart';
 
+import '../helpers/collection_fakes.dart';
 import '../helpers/fakes.dart';
 
 // Full app with the real router, cubits, repository and interceptor.
@@ -43,6 +44,8 @@ void main() {
     http.handler = (o) => switch (o.path) {
       ApiEndpoints.refresh => MockReply(200, tokenJson()),
       ApiEndpoints.me => MockReply(200, meJson()),
+      ApiEndpoints.dashboard => MockReply(200, dashboardJson()),
+      ApiEndpoints.sessions => MockReply(200, pageJson([])),
       _ => const MockReply(404),
     };
     await launch(t);

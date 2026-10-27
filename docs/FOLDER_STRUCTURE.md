@@ -25,12 +25,13 @@ lungsense_pro/
 │   │   ├── config/             # api_config, app_info (version label)
 │   │   ├── errors/             # failure, failure_messages
 │   │   ├── logging/app_logger.dart
-│   │   ├── network/            # api_client, api_endpoints, auth_interceptor, error_mapper
+│   │   ├── network/            # api_client (+ upload Dio), api_endpoints, auth_interceptor, error_mapper, json_read
 │   │   ├── routing/routes.dart
 │   │   ├── storage/token_storage.dart
 │   │   ├── theme/              # app_colors, design_tokens, app_theme
-│   │   ├── utils/validators.dart
-│   │   └── widgets/            # ls_button, ls_text_field, ls_banner, ls_screen, brand, ls_components, ls_bottom_nav
+│   │   ├── utils/              # validators, date_format, paged
+│   │   └── widgets/            # ls_button, ls_text_field, ls_banner, ls_screen, brand, ls_components, ls_bottom_nav,
+│   │                           # ls_sheet (confirm sheet, toast), ls_search_field
 │   └── features/
 │       ├── authentication/
 │       │   ├── domain/         # entities (app_user, registration, session_outcome), repositories, usecases
@@ -41,15 +42,22 @@ lungsense_pro/
 │       │                                   # register, register doctor, verify email, role selection
 │       ├── password_recovery/presentation/ # forgot + reset cubits and pages
 │       ├── account_status/presentation/pages/account_status_page.dart
-│       ├── patient/presentation/pages/     # home, check-ins
-│       ├── doctor/presentation/pages/      # dashboard, patients/sessions lists
+│       ├── patient/presentation/pages/     # patient home (today's check-in)
+│       ├── doctor/presentation/pages/      # dashboard
+│       ├── patients/                       # domain (patient, repo, use cases), data (models, datasource),
+│       │                                   # presentation (list, add/edit, detail)
+│       ├── collection/
+│       │   ├── domain/         # session, recording, symptoms, dashboard entities; repository; device service interfaces
+│       │   ├── data/           # models, remote datasource (presigned uploads), repository, device/ (record, just_audio, file_picker)
+│       │   └── presentation/   # cubits (session, recorder, steps, lists, events), pages (start, overview, recorder,
+│       │                       # symptoms, clinical, review/submit, sessions), widgets (header, step row, severity, copy)
 │       ├── profile/presentation/pages/profile_page.dart
 │       └── admin/
 │           ├── domain/         # doctor_application, admin_repository, admin_usecases
 │           ├── data/           # doctor_application_model (tolerant parser), datasource, repository
 │           └── presentation/   # cubits, approvals list, review, users
 ├── test/
-│   ├── helpers/                # fakes.dart (MOCK adapter, in-memory storage), pump.dart
+│   ├── helpers/                # fakes.dart (MOCK adapter, in-memory storage), collection_fakes.dart (device fakes, JSON samples), pump.dart
 │   ├── unit/                   # mapper, models, request bodies, admin parser, policy, repository, interceptor, use cases, cubits, redirect, storage
 │   ├── widget/                 # login, account status, welcome/splash, full app flow, feature flows
 │   └── backend/                # live API contract tests (tag: backend, skipped by default)

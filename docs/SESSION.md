@@ -56,3 +56,25 @@
 
 ### Handover
 - Provide `LS_TEST_PATIENT_EMAIL` / `LS_TEST_PATIENT_PASSWORD` locally to run the credential test.
+
+## 2026-10-27 · Session 4 · M9–M12
+
+**Goal:** build everything still missing (admin Users, patients, collection flow, sessions, dashboard, patient check-in) against `docs/openapi_snapshot.json`; user approved working through without stopping.
+
+### Work done
+- Built M9–M12 (CHANGELOG 0.3.0). New features `patients/` and `collection/`; admin users added to `admin/`.
+- Added record, just_audio, file_picker, path_provider, url_launcher (+ fake_async for tests); Android RECORD_AUDIO, iOS usage strings.
+- Fixed: approval tabs only ever loaded pending doctors (endpoint defaults to `status=pending_approval`).
+- Checks: `dart format` clean, `flutter analyze` no issues, `flutter test` 157 passed / 1 skipped.
+
+### Not verified
+- Device run, microphone, storage upload (KI-24); live collection endpoints (no test accounts).
+
+### Decisions
+- ADR-022 … ADR-030.
+
+### Open questions for the user
+- KI-18 diagnosis picker (no API field), KI-19 descriptors for 8 symptoms.
+
+### Handover
+- Next: PROJECT_STATE.md "Next step".

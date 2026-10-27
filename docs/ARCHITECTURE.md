@@ -11,7 +11,7 @@ presentation ──▶ domain ◀── data
 
 | Layer | May import | Must not import |
 |---|---|---|
-| `features/*/domain` | Dart, `equatable`, `core/errors` | Flutter, Dio, JSON, storage |
+| `features/*/domain` | Dart, `equatable`, `core/errors`, `core/utils/paged.dart` | Flutter, Dio, JSON, storage, plugins |
 | `features/*/data` | domain, `core/network`, `core/storage`, Dio | presentation |
 | `features/*/presentation` | domain, `core/theme`, `core/widgets`, bloc, go_router | data |
 | `app/` (composition root) | everything | – |
@@ -30,7 +30,10 @@ presentation ──▶ domain ◀── data
 | `SessionOutcome.fromUser` | domain/entities/session_outcome.dart | Access policy from backend role + status |
 | `SessionCubit` | presentation/cubit/session_cubit.dart | App-wide session state |
 | `sessionRedirect` | app/session_redirect.dart | GoRouter guard (pure function, unit-tested) |
-| DI | app/di.dart | GetIt registrations |
+| DI | app/di.dart | GetIt registrations; `DeviceServices` (mic, player, picker, links) overridable for tests |
+| `createUploadDio` | core/network/api_client.dart | Second Dio for presigned storage uploads: no base URL, no bearer token (ADR-025) |
+| `CollectionEvents` | features/collection/presentation/cubit | Broadcast of changed session ids; lists, dashboard and overview reload on it (ADR-023) |
+| `RecorderCubit` | features/collection/presentation/cubit | LsRecorder state machine (see below) |
 
 ## Auth flows
 
@@ -69,8 +72,13 @@ Unknown roles or statuses never grant access. Backend authorization stays author
 | `/forgot-password?email=` · `/reset-password?email=` | Forgot, Reset | Also used signed-in from Profile |
 | `/role-selection` | Account type (Google `new`) | `AccountTypeCubit` → `session.resolve(outcome)` |
 | `/patient`, `/patient/check-ins`, `/patient/profile` | Patient tabs | `StatefulShellRoute.indexedStack` + `RoleScaffold` |
-| `/doctor`, `/doctor/patients`, `/doctor/sessions`, `/doctor/profile` | Doctor tabs | Collection actions disabled (no API) |
-| `/admin`, `/admin/users`, `/admin/profile` | Admin tabs | `AdminDoctorsCubit..load()` |
+| `/doctor`, `/doctor/patients`, `/doctor/sessions`, `/doctor/profile` | Doctor tabs | Dashboard, Patients, Sessions, Profile |
+| `/doctor/patients/new` | Add patient | Pops with the saved patient |
+| `/doctor/patient/:id` · `/edit` | Patient detail · Edit | |
+| `/doctor/collect?patient=&study=` | Start collection | `POST /collection/sessions` → overview |
+| `/doctor/session/:id` | Overview (draft) or Session detail (completed) | Children: `cough`, `breathing`, `symptoms`, `context`, `review`, `submit` |
+| `/patient/check-in/:id` (+ same children) | Patient check-in | Same screens, `CollectionMode.patient` copy |
+| `/admin`, `/admin/users`, `/admin/profile` | Admin tabs | Approvals (3 status tabs), Users (search, suspend, reactivate) |
 | `/admin/review/:id` | Review doctor | Application passed in `extra`; cold link → "Application not loaded" |
 
 ## API contract (documented endpoints and where they are used)
@@ -85,13 +93,41 @@ Unknown roles or statuses never grant access. Backend authorization stays author
 | POST | /api/v1/auth/forgot-password | email | Forgot |
 | POST | /api/v1/auth/reset-password | email, otp_code, new_password (no confirm field) | Reset |
 | POST | /api/v1/users/me/account-type | account_type, full_name, doctor_profile (doctor, no credential_notes) | Role selection |
-| GET | /api/v1/admin/doctors | – | Approvals list (response shape unconfirmed, KI-02) |
+| GET | /api/v1/admin/doctors?status= | – | Approvals: one call per tab status |
 | POST | /api/v1/admin/doctors/{id}/approve | none | Review |
 | POST | /api/v1/admin/doctors/{id}/reject | reason | Review |
 | GET/POST | /api/v1/auth/google/authorize-url · token | – | **Not used** (KI-03) |
-| PATCH | /api/v1/admin/users/{id}/status | undocumented | **Not used** (ADR-016) |
+| GET | /api/v1/admin/users?search=&limit=&offset= | – | Users tab |
+| PATCH | /api/v1/admin/users/{id}/status | account_status (active/suspended), reason? | Suspend / reactivate |
+| GET | /api/v1/patients?search=&limit=&offset= | – | Patient list, Start collection |
+| POST | /api/v1/patients | external_id, age_years, sex, consent_status, relevant_history, allow_duplicate | Add patient (409 possible_duplicate, KI-17) |
+| GET · PATCH | /api/v1/patients/{id} | same fields, no allow_duplicate | Patient detail · Edit |
+| POST | /api/v1/collection/sessions | patient_id (doctor) / {} (patient) | Start collection / check-in |
+| GET | /api/v1/collection/sessions?status=&patient_id=&limit=&offset= | – | Sessions, drafts, patient detail, patient home |
+| GET · PATCH | /api/v1/collection/sessions/{id} | notes | Overview, review, detail · clinical notes |
+| POST | /api/v1/collection/sessions/{id}/complete | – | Submit (409 incomplete_session → missing items) |
+| GET · PUT | /api/v1/collection/sessions/{id}/symptoms | all 10 ratings 0–3 | Symptoms |
+| POST | /api/v1/collection/sessions/{id}/audio/upload-url | recording_type, content_type, file_size_bytes | Recorder → presigned POST → `POST /collection/audio/{id}/complete` |
+| GET · DELETE | /api/v1/collection/audio/{id} · /download-url | – | QC polling, replace take, playback |
+| POST | /api/v1/collection/sessions/{id}/xrays/upload-url | content_type, file_size_bytes, original_filename, view?, taken_on? | Clinical context → presigned POST → `POST /collection/xrays/{id}/complete` |
+| DELETE · GET | /api/v1/collection/xrays/{id} · /download-url | – | Remove X-ray · View |
+| GET | /api/v1/collection/dashboard | – | Doctor dashboard |
 
-All paths are in `core/network/api_endpoints.dart`; bodies are built only in `RequestModels`. Verified against mocks only (KI-01).
+Not used: `GET/PUT /doctors/me` (profile editing not in scope yet), `/patients/me`, `/patients/by-study-id`, `/admin/users/{id}` and `/role`, `/admin/audit-logs`, `/admin/stats` (no design), and the non-`/api/v1` Wellness routes (ADR-022).
+
+## Recorder state machine (`RecorderCubit`)
+
+```
+loading → idle ─record→ recording ─stop < min→ tooShort
+                            └─stop ≥ min / auto-stop at max→ uploading → checking ─qc true→ passed
+                                                                 │           ├─qc false / failed→ qualityFailed
+                                                                 │           └─20 s no answer→ checkPending
+                                                                 └─error→ uploadFailed ─Retry→ uploading
+idle ─import─ length outside min–max → importInvalid · mic refused → micDenied
+```
+Continue is enabled in `passed` (and `checkPending`, KI-20). The server's `qc_reason` is shown verbatim.
+
+All paths are in `core/network/api_endpoints.dart`. Auth bodies are built in `RequestModels`, patient bodies in `PatientModels`, collection bodies in `CollectionModels`. Collection, patient and admin-user calls are verified against mocks only (KI-24).
 
 ## Asset inventory
 

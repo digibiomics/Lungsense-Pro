@@ -174,11 +174,14 @@ class LsKeyValueRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label,
-            style: LsText.label.copyWith(
-              fontWeight: FontWeight.w400,
-              color: AppColors.textSecondary,
+          // Long labels (symptom names) wrap instead of overflowing.
+          Flexible(
+            child: Text(
+              label,
+              style: LsText.label.copyWith(
+                fontWeight: FontWeight.w400,
+                color: AppColors.textSecondary,
+              ),
             ),
           ),
           const SizedBox(width: LsSpace.sm),

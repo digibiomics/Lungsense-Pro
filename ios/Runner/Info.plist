@@ -6,6 +6,10 @@
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>LungSense Pro records cough and breathing sounds for the research study.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>LungSense Pro lets you attach a chest X-ray image to a collection session.</string>
 	<key>CFBundleDisplayName</key>
 	<string>LungSense Pro</string>
 	<key>CFBundleExecutable</key>

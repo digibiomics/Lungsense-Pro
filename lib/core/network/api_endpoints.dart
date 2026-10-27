@@ -1,7 +1,7 @@
 import '../config/api_config.dart';
 
 /// Documented LungSense Pro endpoints. Do not add paths that are not in the
-/// backend contract (see docs/ARCHITECTURE.md, "API contract").
+/// backend contract (docs/openapi_snapshot.json, docs/ARCHITECTURE.md).
 class ApiEndpoints {
   const ApiEndpoints._();
 
@@ -24,9 +24,41 @@ class ApiEndpoints {
   // Admin
   static const String adminDoctors = '$_p/admin/doctors';
   static String approveDoctor(String userId) =>
-      '$_p/admin/doctors/${Uri.encodeComponent(userId)}/approve';
+      '$_p/admin/doctors/${_e(userId)}/approve';
   static String rejectDoctor(String userId) =>
-      '$_p/admin/doctors/${Uri.encodeComponent(userId)}/reject';
+      '$_p/admin/doctors/${_e(userId)}/reject';
+  static const String adminUsers = '$_p/admin/users';
+  static String adminUser(String userId) => '$_p/admin/users/${_e(userId)}';
   static String userStatus(String userId) =>
-      '$_p/admin/users/${Uri.encodeComponent(userId)}/status';
+      '$_p/admin/users/${_e(userId)}/status';
+
+  // Patients
+  static const String patients = '$_p/patients';
+  static String patient(String id) => '$_p/patients/${_e(id)}';
+  static String patientSessions(String id) => '$_p/patients/${_e(id)}/sessions';
+
+  // Collection
+  static const String sessions = '$_p/collection/sessions';
+  static String session(String id) => '$_p/collection/sessions/${_e(id)}';
+  static String completeSession(String id) =>
+      '$_p/collection/sessions/${_e(id)}/complete';
+  static String sessionSymptoms(String id) =>
+      '$_p/collection/sessions/${_e(id)}/symptoms';
+  static String audioUploadUrl(String sessionId) =>
+      '$_p/collection/sessions/${_e(sessionId)}/audio/upload-url';
+  static String audio(String id) => '$_p/collection/audio/${_e(id)}';
+  static String completeAudio(String id) =>
+      '$_p/collection/audio/${_e(id)}/complete';
+  static String audioDownloadUrl(String id) =>
+      '$_p/collection/audio/${_e(id)}/download-url';
+  static String xrayUploadUrl(String sessionId) =>
+      '$_p/collection/sessions/${_e(sessionId)}/xrays/upload-url';
+  static String xray(String id) => '$_p/collection/xrays/${_e(id)}';
+  static String completeXray(String id) =>
+      '$_p/collection/xrays/${_e(id)}/complete';
+  static String xrayDownloadUrl(String id) =>
+      '$_p/collection/xrays/${_e(id)}/download-url';
+  static const String dashboard = '$_p/collection/dashboard';
+
+  static String _e(String v) => Uri.encodeComponent(v);
 }

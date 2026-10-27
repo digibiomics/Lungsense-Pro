@@ -17,11 +17,16 @@ abstract final class Routes {
   static const patientHome = '/patient';
   static const patientCheckIns = '/patient/check-ins';
   static const patientProfile = '/patient/profile';
+  static const patientCheckIn = '/patient/check-in';
 
   static const doctorDashboard = '/doctor';
   static const doctorPatients = '/doctor/patients';
   static const doctorSessions = '/doctor/sessions';
   static const doctorProfile = '/doctor/profile';
+  static const doctorAddPatient = '/doctor/patients/new';
+  static const doctorPatient = '/doctor/patient';
+  static const doctorStartCollection = '/doctor/collect';
+  static const doctorSession = '/doctor/session';
 
   static const adminHome = '/admin';
   static const adminUsers = '/admin/users';
@@ -56,6 +61,23 @@ abstract final class Routes {
   static String resetPasswordFor(String email) => Uri(
     path: resetPassword,
     queryParameters: email.isEmpty ? null : {'email': email},
+  ).toString();
+
+  static String doctorPatientFor(String id) =>
+      '$doctorPatient/${Uri.encodeComponent(id)}';
+  static String doctorEditPatientFor(String id) =>
+      '${doctorPatientFor(id)}/edit';
+  static String doctorSessionFor(String id) =>
+      '$doctorSession/${Uri.encodeComponent(id)}';
+  static String patientCheckInFor(String id) =>
+      '$patientCheckIn/${Uri.encodeComponent(id)}';
+
+  /// Start collection, optionally with a patient already chosen.
+  static String startCollectionFor({String? patientId, String? studyId}) => Uri(
+    path: doctorStartCollection,
+    queryParameters: patientId == null
+        ? null
+        : {'patient': patientId, 'study': ?studyId},
   ).toString();
 
   static String adminReviewFor(String userId) =>
