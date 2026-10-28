@@ -41,7 +41,7 @@ class CollectionRemoteDataSource {
       ApiEndpoints.sessions,
       queryParameters: {
         if (status == SessionStatus.draft) 'status': 'draft',
-        if (status == SessionStatus.completed) 'status': 'completed',
+        if (status == SessionStatus.completed) 'status': 'complete',
         'patient_id': ?patientId,
         'limit': limit,
         'offset': offset,

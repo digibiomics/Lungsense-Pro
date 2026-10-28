@@ -219,6 +219,22 @@ void main() {
         ),
       );
     });
+
+    test('session list filters use the documented status values', () async {
+      // Spec: status matches ^(draft|complete)$; "completed" is a 422.
+      final http = MockHttpAdapter((o) => MockReply(200, pageJson([])));
+      final ds = CollectionRemoteDataSource(mockDio(http), Dio());
+      for (final s in SessionStatus.values) {
+        await ds.listSessions(status: s, offset: 0, limit: 20);
+      }
+      await ds.listSessions(offset: 0, limit: 20);
+      expect(http.requests.map((r) => r.queryParameters['status']).toList(), [
+        'draft',
+        'complete',
+        null, // unknown
+        null, // no filter
+      ]);
+    });
   });
 
   group('patients', () {

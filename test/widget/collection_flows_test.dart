@@ -456,7 +456,7 @@ void main() {
           return MockReply(
             200,
             pageJson([
-              if (status != 'completed') sessionJson(),
+              if (status != 'complete') sessionJson(),
               if (status != 'draft') done,
             ]),
           );
@@ -469,7 +469,7 @@ void main() {
       expect(find.text('Today'), findsOneWidget);
       expect(find.text('Resume'), findsOneWidget);
       await tap(t, find.byKey(const Key('filter_completed')));
-      expect(http.requests.last.queryParameters['status'], 'completed');
+      expect(http.requests.last.queryParameters['status'], 'complete');
       expect(find.text('Resume'), findsNothing);
       await tap(t, find.byKey(const Key('session_s-9')));
       expect(find.text('Session details'), findsOneWidget);
