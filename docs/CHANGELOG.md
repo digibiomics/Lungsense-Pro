@@ -10,6 +10,7 @@ Format: [Keep a Changelog](https://keepachangelog.com). Versions follow `pubspec
 - 9 tests (draft rules, paging past hidden drafts, dashboard, remove flow).
 
 ### Fixed
+- Patient home: a completed check-in no longer hides "Start check-in". Patients can start another check-in the same day ("Start another check-in", with "View today's check-in" below); the API keeps every check-in.
 - Patient check-in no longer dead-ends on "Research consent must be recorded before collecting data." Patient home reads the patient's own record (`GET /patients/me`) and, while consent is not given, shows a consent step that records it with `PATCH /patients/me` (`consent_status: given`) before Start check-in appears.
 
 ## [0.3.0] – 2026-10-27 · M9–M12

@@ -560,6 +560,36 @@ void main() {
       expect(find.text('Not finished'), findsOneWidget);
     });
 
+    testWidgets('a completed check-in today still lets the patient start '
+        'another', (t) async {
+      http.handler = (o) {
+        final a = auth(o, role: 'patient');
+        if (a != null) return a;
+        if (o.path == ApiEndpoints.sessions && o.method == 'POST') {
+          return MockReply(201, sessionJson(id: 's-2'));
+        }
+        if (o.path == ApiEndpoints.sessions) {
+          return MockReply(200, pageJson([sessionJson(status: 'completed')]));
+        }
+        if (o.path == ApiEndpoints.session('s-2')) {
+          return MockReply(200, sessionJson(id: 's-2'));
+        }
+        return const MockReply(404);
+      };
+      await launch(t);
+      expect(find.text('Done today'), findsOneWidget);
+      expect(find.byKey(const Key('checkin_view_done')), findsOneWidget);
+      expect(find.text('Start another check-in'), findsOneWidget);
+      await tap(t, find.byKey(const Key('checkin_start')));
+      expect(
+        http.requests.where(
+          (r) => r.path == ApiEndpoints.sessions && r.method == 'POST',
+        ),
+        hasLength(1),
+      );
+      expect(find.text('Your check-in'), findsOneWidget);
+    });
+
     testWidgets('a draft from yesterday is not offered again', (t) async {
       final old = sessionJson()
         ..['started_at'] = DateTime.now()

@@ -54,10 +54,10 @@ class PatientHomePage extends StatelessWidget {
         final cubit = context.read<PatientHomeCubit>();
         final draft = state.todaysDraft(today);
         final done = state.todaysCompleted(today);
-        final (String pill, LsPillTone tone) = done != null
-            ? ('Done today', LsPillTone.success)
-            : draft != null
+        final (String pill, LsPillTone tone) = draft != null
             ? ('In progress', LsPillTone.pending)
+            : done != null
+            ? ('Done today', LsPillTone.success)
             : ('Not done yet', LsPillTone.neutral);
         return RolePage(
           eyebrow: formatLongDate(today),
@@ -121,14 +121,9 @@ class PatientHomePage extends StatelessWidget {
                     const SizedBox(height: 10),
                   ],
                   const SizedBox(height: 4),
-                  if (done != null)
-                    LsButton(
-                      label: 'View today\'s check-in',
-                      variant: LsButtonVariant.secondary,
-                      onPressed: () =>
-                          context.push(Routes.patientCheckInFor(done.id)),
-                    )
-                  else if (consent.needed)
+                  // A completed check-in does not stop another one the same
+                  // day: the API keeps every check-in.
+                  if (consent.needed)
                     _ConsentStep(
                       state: consent,
                       onGive: () => _giveConsent(context),
@@ -143,13 +138,25 @@ class PatientHomePage extends StatelessWidget {
                   else
                     LsButton(
                       key: const Key('checkin_start'),
-                      label: 'Start check-in · about 3 min',
+                      label: done != null
+                          ? 'Start another check-in'
+                          : 'Start check-in · about 3 min',
                       loading: starting.starting,
                       loadingLabel: 'Starting…',
                       onPressed: state.loading && state.recent.isEmpty
                           ? null
                           : () => _start(context),
                     ),
+                  if (done != null) ...[
+                    const SizedBox(height: 8),
+                    LsButton(
+                      key: const Key('checkin_view_done'),
+                      label: 'View today\'s check-in',
+                      variant: LsButtonVariant.secondary,
+                      onPressed: () =>
+                          context.push(Routes.patientCheckInFor(done.id)),
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   Text(
                     'Find a quiet room before you start.',
