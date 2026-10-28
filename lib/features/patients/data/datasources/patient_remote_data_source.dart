@@ -52,6 +52,15 @@ class PatientRemoteDataSource {
     return PatientModels.fromJson(r.data);
   });
 
+  /// `PATCH /patients/me` (`PatientSelfUpdate`) with the details form.
+  Future<Patient> updateMine(PatientInput input) => _guard(() async {
+    final r = await _dio.patch<Object?>(
+      ApiEndpoints.myPatientRecord,
+      data: PatientModels.selfBody(input),
+    );
+    return PatientModels.fromJson(r.data);
+  });
+
   /// `PATCH /patients/me` (`PatientSelfUpdate`) with the consent only.
   Future<Patient> setMyConsent(ConsentStatus status) => _guard(() async {
     final r = await _dio.patch<Object?>(

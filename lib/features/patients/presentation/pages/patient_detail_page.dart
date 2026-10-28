@@ -86,14 +86,13 @@ class PatientDetailPage extends StatelessWidget {
     Patient p,
   ) {
     final t = now ?? DateTime.now();
-    final fields = <(String, String?)>[
-      ('Hospital ref.', p.externalId),
+    final fields = <(String, String)>[
+      if (p.externalId != null) ('Hospital ref.', p.externalId!),
       if (p.createdAt != null)
         ('Registered', LsDates.dayMonthYear(p.createdAt!)),
-      if (p.ageYears != null) ('Age', '${p.ageYears} years'),
-      if (p.sex != null) ('Sex', p.sex!.label),
+      ...patientRecordFacts(p),
       ('Research consent', p.consent.label),
-    ].where((f) => f.$2 != null && f.$2!.isNotEmpty).map((f) => (f.$1, f.$2!));
+    ].where((f) => f.$2.isNotEmpty);
     final history = p.relevantHistory?.trim();
 
     return [
@@ -128,7 +127,10 @@ class PatientDetailPage extends StatelessWidget {
       LsFactGrid(
         key: const Key('patient_facts'),
         facts: fields.toList(),
-        wide: [if (history != null && history.isNotEmpty) ('Notes', history)],
+        wide: [
+          if (history != null && history.isNotEmpty)
+            ('Relevant history', history),
+        ],
       ),
       if (p.consent != ConsentStatus.given) ...[
         const SizedBox(height: LsSpace.sm),
@@ -179,3 +181,17 @@ class PatientDetailPage extends StatelessWidget {
     ];
   }
 }
+
+/// Name, age, gender, smoking, height and weight of a record, for Patient
+/// detail and the patient's own Profile. Unset values are left out.
+List<(String, String)> patientRecordFacts(Patient p) => [
+  if (p.fullName?.trim().isNotEmpty ?? false) ('Name', p.fullName!.trim()),
+  if (p.ageYears != null) ('Age', '${p.ageYears} years'),
+  if (p.sex != null) ('Gender', p.sex!.label),
+  if (p.smokingStatus != null) ('Smoking', p.smokingStatus!.label),
+  if (p.heightCm != null) ('Height', '${_measure(p.heightCm!)} cm'),
+  if (p.weightKg != null) ('Weight', '${_measure(p.weightKg!)} kg'),
+];
+
+String _measure(double v) =>
+    v == v.roundToDouble() ? v.toInt().toString() : v.toStringAsFixed(1);

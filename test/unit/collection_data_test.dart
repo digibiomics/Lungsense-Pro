@@ -240,8 +240,11 @@ void main() {
   group('patients', () {
     const input = PatientInput(
       externalId: ' HSP-22871 ',
+      fullName: ' Aamir Khan ',
       ageYears: 54,
       sex: PatientSex.male,
+      smokingStatus: SmokingStatus.never,
+      weightKg: 70,
       consent: ConsentStatus.given,
       relevantHistory: '  ',
     );
@@ -249,13 +252,42 @@ void main() {
     test('create body uses the documented fields only', () {
       expect(PatientModels.body(input, allowDuplicate: false), {
         'external_id': 'HSP-22871',
+        'full_name': 'Aamir Khan',
         'age_years': 54,
         'sex': 'male',
-        'consent_status': 'given',
+        'height_cm': null,
+        'weight_kg': 70.0,
+        'smoking_status': 'never',
         'relevant_history': null,
+        'consent_status': 'given',
         'allow_duplicate': false,
       });
       expect(PatientModels.body(input).containsKey('allow_duplicate'), false);
+    });
+
+    test('self update body leaves out the reference and consent', () {
+      final body = PatientModels.selfBody(input);
+      expect(body.containsKey('external_id'), false);
+      expect(body.containsKey('consent_status'), false);
+      expect(body['full_name'], 'Aamir Khan');
+      expect(body['smoking_status'], 'never');
+    });
+
+    test('record reads name, smoking, height and weight', () {
+      final p = PatientModels.fromJson({
+        'id': 'p-1',
+        'study_id': 'LS-0001',
+        'full_name': 'Aamir Khan',
+        'smoking_status': 'current',
+        'height_cm': 172,
+        'weight_kg': 68.5,
+        'consent_status': 'given',
+        'is_archived': false,
+      });
+      expect(p.fullName, 'Aamir Khan');
+      expect(p.smokingStatus, SmokingStatus.current);
+      expect(p.heightCm, 172.0);
+      expect(p.weightKg, 68.5);
     });
 
     test('409 possible_duplicate is read with its matches', () async {

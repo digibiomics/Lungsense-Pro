@@ -26,6 +26,9 @@ class PatientRepositoryImpl implements PatientRepository {
   Future<Patient> mine() => _remote.mine();
 
   @override
+  Future<Patient> updateMine(PatientInput input) => _remote.updateMine(input);
+
+  @override
   Future<Patient> setMyConsent(ConsentStatus status) =>
       _remote.setMyConsent(status);
 }

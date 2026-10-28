@@ -189,20 +189,28 @@ void main() {
 
       // Required fields are checked before anything is sent.
       await tap(t, find.byKey(const Key('patient_save')));
-      expect(find.text('Choose the patient\'s sex.'), findsOneWidget);
+      expect(find.text('Choose the gender.'), findsOneWidget);
+      expect(find.text('Choose the smoking status.'), findsOneWidget);
       expect(http.count(ApiEndpoints.patients), 1); // the list GET only
 
       await t.enterText(find.byKey(const Key('patient_ref')), 'HSP-22871');
+      await t.enterText(find.byKey(const Key('patient_name')), 'Aamir Khan');
       await t.enterText(find.byKey(const Key('patient_age')), '54');
       await tap(t, find.byKey(const Key('patient_sex_male')));
+      await tap(t, find.byKey(const Key('patient_smoking_former')));
+      await t.enterText(find.byKey(const Key('patient_height')), '172.5');
       await tap(t, find.byKey(const Key('patient_consent')));
       await tap(t, find.byKey(const Key('patient_save')));
       expect(bodyOf(ApiEndpoints.patients, method: 'POST'), {
         'external_id': 'HSP-22871',
+        'full_name': 'Aamir Khan',
         'age_years': 54,
         'sex': 'male',
-        'consent_status': 'given',
+        'height_cm': 172.5,
+        'weight_kg': null,
+        'smoking_status': 'former',
         'relevant_history': null,
+        'consent_status': 'given',
         'allow_duplicate': false,
       });
       expect(find.textContaining('LS-0119'), findsOneWidget);
@@ -507,6 +515,9 @@ void main() {
       await tap(t, find.byKey(const Key('patient_p-1')));
       expect(find.text('Patient LS-0142'), findsOneWidget);
       expect(find.text('HSP-22904'), findsOneWidget);
+      expect(find.text('Aamir Khan'), findsOneWidget);
+      expect(find.text('Former'), findsOneWidget);
+      expect(find.text('172 cm'), findsOneWidget);
       expect(find.textContaining('Consent not recorded.'), findsOneWidget);
       expect(
         http.requests.any((r) => r.queryParameters['patient_id'] == 'p-1'),
@@ -517,6 +528,49 @@ void main() {
   });
 
   group('patient check-in', () {
+    testWidgets('patient edits their own details from Profile', (t) async {
+      http.handler = (o) {
+        final a = auth(o, role: 'patient');
+        if (a != null) return a;
+        if (o.path == ApiEndpoints.myPatientRecord && o.method == 'PATCH') {
+          return MockReply(200, {
+            ...patientJson(),
+            'full_name': 'Aamir K.',
+            'weight_kg': 70,
+          });
+        }
+        if (o.path == ApiEndpoints.myPatientRecord) {
+          return MockReply(200, patientJson());
+        }
+        if (o.path == ApiEndpoints.sessions) {
+          return MockReply(200, pageJson([]));
+        }
+        return const MockReply(404);
+      };
+      await launch(t);
+      await tap(t, nav('Profile'));
+      expect(find.text('Aamir Khan'), findsOneWidget);
+      expect(find.text('Former'), findsOneWidget);
+
+      await tap(t, find.byKey(const Key('my_details_edit')));
+      expect(find.byKey(const Key('patient_ref')), findsNothing);
+      expect(find.byKey(const Key('patient_consent')), findsNothing);
+      await t.enterText(find.byKey(const Key('patient_name')), 'Aamir K.');
+      await t.enterText(find.byKey(const Key('patient_weight')), '70');
+      await tap(t, find.byKey(const Key('patient_save')));
+      expect(bodyOf(ApiEndpoints.myPatientRecord, method: 'PATCH'), {
+        'full_name': 'Aamir K.',
+        'age_years': 54,
+        'sex': 'male',
+        'height_cm': 172.0,
+        'weight_kg': 70.0,
+        'smoking_status': 'former',
+        'relevant_history': null,
+      });
+      expect(find.text('Aamir K.'), findsOneWidget);
+      expect(find.text('70 kg'), findsOneWidget);
+    });
+
     testWidgets('start creates a session for the patient, no patient_id', (
       t,
     ) async {

@@ -38,6 +38,9 @@ abstract final class PatientModels {
       ageYears: JsonRead.integer(m['age_years']),
       dateOfBirth: JsonRead.date(m['date_of_birth']),
       sex: PatientSex.fromApi(JsonRead.str(m['sex'])),
+      heightCm: _number(m['height_cm']),
+      weightKg: _number(m['weight_kg']),
+      smokingStatus: SmokingStatus.fromApi(JsonRead.str(m['smoking_status'])),
       relevantHistory: JsonRead.str(m['relevant_history']),
       consent: ConsentStatus.fromApi(JsonRead.str(m['consent_status'])),
       consentVersion: JsonRead.str(m['consent_version']),
@@ -47,14 +50,26 @@ abstract final class PatientModels {
     );
   }
 
-  /// `PatientCreate` / `PatientUpdate` body with the form's fields only.
+  /// `PatientCreate` / `PatientUpdate` body with the form's fields.
   static Map<String, dynamic> body(PatientInput i, {bool? allowDuplicate}) => {
-    'external_id': i.externalId.trim(),
+    'external_id': _blankToNull(i.externalId),
+    ..._shared(i),
+    'consent_status': ?i.consent?.api,
+    'allow_duplicate': ?allowDuplicate,
+  };
+
+  /// `PatientSelfUpdate` body: no hospital reference, and consent is
+  /// recorded separately on Patient home.
+  static Map<String, dynamic> selfBody(PatientInput i) => _shared(i);
+
+  static Map<String, dynamic> _shared(PatientInput i) => {
+    'full_name': i.fullName.trim(),
     'age_years': i.ageYears,
     'sex': i.sex.api,
-    'consent_status': i.consent.api,
+    'height_cm': i.heightCm,
+    'weight_kg': i.weightKg,
+    'smoking_status': i.smokingStatus.api,
     'relevant_history': _blankToNull(i.relevantHistory),
-    'allow_duplicate': ?allowDuplicate,
   };
 
   /// Reads a `409 possible_duplicate` reply. The shape of the matches is
@@ -95,6 +110,8 @@ abstract final class PatientModels {
     }
     return PossibleDuplicate(matches, message: message);
   }
+
+  static double? _number(Object? v) => v is num ? v.toDouble() : null;
 
   static String? _blankToNull(String? v) {
     final t = v?.trim();

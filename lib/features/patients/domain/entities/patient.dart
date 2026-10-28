@@ -19,6 +19,25 @@ enum PatientSex {
   }
 }
 
+/// `smoking_status` enum of the patient schemas.
+enum SmokingStatus {
+  never('never', 'Never'),
+  former('former', 'Former'),
+  current('current', 'Current'),
+  unknown('unknown', 'Not recorded');
+
+  const SmokingStatus(this.api, this.label);
+  final String api;
+  final String label;
+
+  static SmokingStatus? fromApi(String? v) {
+    for (final s in values) {
+      if (s.api == v) return s;
+    }
+    return null;
+  }
+}
+
 /// `consent_status` enum of the patient schemas.
 enum ConsentStatus {
   notRecorded('not_recorded', 'Not recorded'),
@@ -80,8 +99,7 @@ class PatientSummary extends Equatable {
   ];
 }
 
-/// A full patient record (`PatientOut`). Fields the Pro design does not
-/// collect (name, phone, height, weight, smoking) are kept only for display.
+/// A full patient record (`PatientOut`). The app shows `sex` as "Gender".
 class Patient extends Equatable {
   const Patient({
     required this.id,
@@ -93,6 +111,9 @@ class Patient extends Equatable {
     this.ageYears,
     this.dateOfBirth,
     this.sex,
+    this.heightCm,
+    this.weightKg,
+    this.smokingStatus,
     this.relevantHistory,
     this.consentVersion,
     this.consentRecordedAt,
@@ -106,6 +127,9 @@ class Patient extends Equatable {
   final int? ageYears;
   final DateTime? dateOfBirth;
   final PatientSex? sex;
+  final double? heightCm;
+  final double? weightKg;
+  final SmokingStatus? smokingStatus;
   final String? relevantHistory;
   final ConsentStatus consent;
   final String? consentVersion;
@@ -122,6 +146,9 @@ class Patient extends Equatable {
     ageYears,
     dateOfBirth,
     sex,
+    heightCm,
+    weightKg,
+    smokingStatus,
     relevantHistory,
     consent,
     consentVersion,
@@ -131,29 +158,42 @@ class Patient extends Equatable {
   ];
 }
 
-/// What the Add/Edit patient form sends (AddPatient.dc.html fields plus
-/// research consent). Null fields are left out of the request.
+/// What the Add/Edit patient form and the patient's own details form send.
+/// [externalId] and [consent] are left out of the patient's own update
+/// (`PatientSelfUpdate`); blank optional fields are sent as null.
 class PatientInput extends Equatable {
   const PatientInput({
-    required this.externalId,
+    required this.fullName,
     required this.ageYears,
     required this.sex,
-    required this.consent,
+    required this.smokingStatus,
+    this.externalId,
+    this.consent,
+    this.heightCm,
+    this.weightKg,
     this.relevantHistory,
   });
 
-  final String externalId;
+  final String fullName;
   final int ageYears;
   final PatientSex sex;
-  final ConsentStatus consent;
+  final SmokingStatus smokingStatus;
+  final String? externalId;
+  final ConsentStatus? consent;
+  final double? heightCm;
+  final double? weightKg;
   final String? relevantHistory;
 
   @override
   List<Object?> get props => [
-    externalId,
+    fullName,
     ageYears,
     sex,
+    smokingStatus,
+    externalId,
     consent,
+    heightCm,
+    weightKg,
     relevantHistory,
   ];
 }

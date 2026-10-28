@@ -8,6 +8,8 @@ Format: [Keep a Changelog](https://keepachangelog.com). Versions follow `pubspec
 - "Remove draft" ("Remove this check-in" for patients) on the collection overview, with a confirm sheet. The API has no session delete (KI-25), so the draft is hidden on this device only; the server keeps it.
 - Drafts not finished on the day they started are no longer listed or offered to resume (Sessions, dashboard, Patient home); opening one shows it read-only. Overview copy now says "later today".
 - 9 tests (draft rules, paging past hidden drafts, dashboard, remove flow).
+- Patient record fields chosen by the product owner: full name, age, gender, smoking status (required), height in cm, weight in kg and relevant history (optional). Add/Edit patient collects them (plus hospital reference and consent as before), Patient detail shows them, and patients see and edit their own on Profile ("My details", `PATCH /patients/me`). "Gender" is the API's `sex` field (male, female, other).
+- 3 tests (self-update body, record parsing, My details flow); add-patient and patient-detail tests cover the new fields.
 
 ### Fixed
 - Patient home: a completed check-in no longer hides "Start check-in". Patients can start another check-in the same day ("Start another check-in", with "View today's check-in" below); the API keeps every check-in.

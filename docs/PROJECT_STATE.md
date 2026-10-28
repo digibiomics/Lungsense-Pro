@@ -17,8 +17,9 @@
 - M11 Session history with filters; dashboard counts, drafts, recent activity.
 - M12 Patient home (start/resume today's check-in), My check-ins, collection screens in patient mode.
 - Remove draft and same-day draft hiding, device-side only (ADR-032, KI-25).
+- Patient record fields (ADR-033): full name, age, gender, smoking status required; height, weight, relevant history optional. Add/Edit patient, Patient detail, and patient Profile "My details" (edit via `PATCH /patients/me`).
 - Label/value alignment: `LsKeyValueRow` keeps values flush right on one line and drops long values under the label; Patient detail uses the design's two-column `LsFactGrid`.
-- Checks (2026-10-28, user's PC): `flutter analyze` no issues; `flutter test` 174 passed, 1 skipped (live backend group).
+- Checks (2026-10-28, user's PC): `flutter analyze` no issues; `flutter test` 178 passed, 1 skipped (live backend group).
 
 ## In progress
 - Nothing.

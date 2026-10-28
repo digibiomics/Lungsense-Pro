@@ -14,9 +14,13 @@ import '../../../authentication/presentation/widgets/role_page.dart';
 
 /// 15 Profile (Profile.dc.html), shared by all roles. Data comes from
 /// `GET /users/me`; pull to refresh re-reads it. Editing is not offered
-/// because no profile-update endpoint is documented.
+/// because no profile-update endpoint is documented. Patients also get
+/// [details] (their own record, which they can edit).
 class ProfilePage extends StatelessWidget {
-  const ProfilePage({super.key});
+  const ProfilePage({super.key, this.details});
+
+  /// Shown under the account details.
+  final Widget? details;
 
   @override
   Widget build(BuildContext context) {
@@ -87,6 +91,7 @@ class ProfilePage extends StatelessWidget {
             for (final (k, v) in rows) LsKeyValueRow(label: k, value: v!),
           ],
         ),
+        if (details != null) ...[const SizedBox(height: LsSpace.lg), details!],
         const SizedBox(height: LsSpace.lg),
         Text('Account', style: LsText.section),
         const SizedBox(height: 10),

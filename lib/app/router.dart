@@ -50,6 +50,7 @@ import '../features/patients/presentation/cubit/patient_cubits.dart';
 import '../features/patients/presentation/pages/patient_detail_page.dart';
 import '../features/patients/presentation/pages/patient_form_page.dart';
 import '../features/patients/presentation/pages/patients_page.dart';
+import '../features/patients/presentation/widgets/my_details_section.dart';
 import '../features/profile/presentation/pages/profile_page.dart';
 import '../features/registration/presentation/cubit/account_type_cubit.dart';
 import '../features/registration/presentation/cubit/registration_cubit.dart';
@@ -165,6 +166,14 @@ GoRouter createRouter(SessionCubit session) {
       // shells so `/doctor/patients/new` is not read as the Patients tab.
       ..._doctorScreens(),
       _sessionRoute(Routes.patientCheckIn, CollectionMode.patient),
+      GoRoute(
+        path: Routes.patientDetails,
+        builder: (_, _) => BlocProvider(
+          create: (_) =>
+              PatientFormCubit.mine(sl<PatientRepository>())..loadInitial(),
+          child: const PatientFormPage(),
+        ),
+      ),
 
       _roleShell(RoleNavItems.patient, [
         GoRoute(
@@ -204,7 +213,10 @@ GoRouter createRouter(SessionCubit session) {
         ),
         GoRoute(
           path: Routes.patientProfile,
-          builder: (_, _) => const ProfilePage(),
+          builder: (_, _) => BlocProvider(
+            create: (_) => MyRecordCubit(sl<PatientRepository>())..load(),
+            child: const ProfilePage(details: MyDetailsSection()),
+          ),
         ),
       ]),
       _roleShell(RoleNavItems.doctor, [

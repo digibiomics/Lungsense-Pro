@@ -160,24 +160,41 @@ class PatientFormState extends Equatable {
   ];
 }
 
-/// 12 Add patient (AddPatient.dc.html) and Edit from Patient detail.
+/// 12 Add patient (AddPatient.dc.html), Edit from Patient detail, and the
+/// signed-in patient's own details ([PatientFormCubit.mine]).
 class PatientFormCubit extends Cubit<PatientFormState> {
-  PatientFormCubit(this._save, this._get, {this.patientId})
-    : super(PatientFormState(loadingInitial: patientId != null));
+  PatientFormCubit(SavePatient save, GetPatient get, {this.patientId})
+    : self = false,
+      _load = patientId == null ? null : (() => get(patientId)),
+      _save = ((input, allowDuplicate) =>
+          save(input, id: patientId, allowDuplicate: allowDuplicate)),
+      super(PatientFormState(loadingInitial: patientId != null));
 
-  final SavePatient _save;
-  final GetPatient _get;
+  /// The patient's own record: `GET` / `PATCH /patients/me`.
+  PatientFormCubit.mine(PatientRepository repo)
+    : self = true,
+      patientId = null,
+      _load = repo.mine,
+      _save = ((input, _) => repo.updateMine(input)),
+      super(const PatientFormState(loadingInitial: true));
 
-  /// Set when editing.
+  final Future<Patient> Function()? _load;
+  final Future<Patient> Function(PatientInput input, bool allowDuplicate) _save;
+
+  /// Set when a doctor edits a record.
   final String? patientId;
 
-  bool get editing => patientId != null;
+  /// True for the patient's own details.
+  final bool self;
+
+  bool get editing => _load != null;
 
   Future<void> loadInitial() async {
-    if (patientId == null) return;
+    final load = _load;
+    if (load == null) return;
     emit(const PatientFormState(loadingInitial: true));
     try {
-      final p = await _get(patientId!);
+      final p = await load();
       if (!isClosed) emit(PatientFormState(initial: p));
     } on Failure catch (f) {
       if (!isClosed) emit(PatientFormState(loadFailure: f));
@@ -191,11 +208,7 @@ class PatientFormCubit extends Cubit<PatientFormState> {
       PatientFormState(phase: PatientFormPhase.saving, initial: state.initial),
     );
     try {
-      final p = await _save(
-        input,
-        id: patientId,
-        allowDuplicate: allowDuplicate,
-      );
+      final p = await _save(input, allowDuplicate);
       if (!isClosed) {
         emit(
           PatientFormState(
@@ -379,4 +392,37 @@ class MyConsentCubit extends Cubit<MyConsentState> {
       return false;
     }
   }
+}
+
+// ------------------------------------------------------ Patient's own record
+
+class MyRecordState extends Equatable {
+  const MyRecordState({this.patient, this.failure});
+
+  final Patient? patient;
+  final Failure? failure;
+
+  bool get loading => patient == null && failure == null;
+
+  @override
+  List<Object?> get props => [patient, failure?.kind];
+}
+
+/// The signed-in patient's record on Profile (`GET /patients/me`).
+class MyRecordCubit extends Cubit<MyRecordState> {
+  MyRecordCubit(this._repo) : super(const MyRecordState());
+
+  final PatientRepository _repo;
+
+  Future<void> load() async {
+    emit(MyRecordState(patient: state.patient));
+    try {
+      final p = await _repo.mine();
+      if (!isClosed) emit(MyRecordState(patient: p));
+    } on Failure catch (f) {
+      if (!isClosed) emit(MyRecordState(patient: state.patient, failure: f));
+    }
+  }
+
+  void applyUpdate(Patient p) => emit(MyRecordState(patient: p));
 }

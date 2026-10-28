@@ -2,7 +2,7 @@ import '../../../../core/utils/paged.dart';
 import '../entities/patient.dart';
 
 /// Documented `/api/v1/patients` operations: the record operations for
-/// doctors, and [mine] / [setMyConsent] for a signed-in patient. Methods
+/// doctors, and [mine] / [updateMine] / [setMyConsent] for a signed-in patient. Methods
 /// throw `Failure`; [create] also throws [PossibleDuplicate].
 abstract interface class PatientRepository {
   Future<Paged<PatientSummary>> list({String? search, int offset = 0});
@@ -12,6 +12,9 @@ abstract interface class PatientRepository {
 
   /// The signed-in patient's own record (`GET /patients/me`).
   Future<Patient> mine();
+
+  /// Saves the patient's own details (`PATCH /patients/me`).
+  Future<Patient> updateMine(PatientInput input);
 
   /// Records the patient's own research consent (`PATCH /patients/me`).
   Future<Patient> setMyConsent(ConsentStatus status);

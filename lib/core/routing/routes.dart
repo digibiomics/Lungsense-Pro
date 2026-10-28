@@ -18,6 +18,7 @@ abstract final class Routes {
   static const patientCheckIns = '/patient/check-ins';
   static const patientProfile = '/patient/profile';
   static const patientCheckIn = '/patient/check-in';
+  static const patientDetails = '/patient/details';
 
   static const doctorDashboard = '/doctor';
   static const doctorPatients = '/doctor/patients';
