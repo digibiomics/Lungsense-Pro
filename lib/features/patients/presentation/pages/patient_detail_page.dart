@@ -10,6 +10,7 @@ import '../../../../core/utils/date_format.dart';
 import '../../../../core/widgets/ls_banner.dart';
 import '../../../../core/widgets/ls_button.dart';
 import '../../../../core/widgets/ls_components.dart';
+import '../../../collection/presentation/cubit/list_cubits.dart';
 import '../../../collection/presentation/widgets/session_row.dart';
 import '../../domain/entities/patient.dart';
 import '../cubit/patient_cubits.dart';
@@ -143,15 +144,41 @@ class PatientDetailPage extends StatelessWidget {
         ),
       ],
       const SizedBox(height: LsSpace.lg),
-      LsButton(
-        key: const Key('patient_start'),
-        label: 'Start Session',
-        icon: const Icon(Icons.add, size: 20),
-        onPressed: p.isArchived
-            ? null
-            : () => context.push(
-                Routes.startCollectionFor(patientId: p.id, studyId: p.studyId),
+      // Creates the session for this patient and opens its collection
+      // steps; the server refuses it without research consent.
+      BlocBuilder<StartSessionCubit, StartSessionState>(
+        builder: (context, start) => Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            LsButton(
+              key: const Key('patient_start'),
+              label: 'Start Session',
+              icon: const Icon(Icons.add, size: 20),
+              loading: start.starting,
+              loadingLabel: 'Starting…',
+              onPressed: p.isArchived || p.consent != ConsentStatus.given
+                  ? null
+                  : () async {
+                      final s = await context.read<StartSessionCubit>().start(
+                        patientId: p.id,
+                      );
+                      if (s != null && context.mounted) {
+                        await context.push(Routes.doctorSessionFor(s.id));
+                      }
+                    },
+            ),
+            if (start.failure != null) ...[
+              const SizedBox(height: LsSpace.sm),
+              LsBanner(
+                tone: LsBannerTone.error,
+                title: 'Session not started.',
+                body:
+                    start.failure!.message ??
+                    FailureMessages.generic(start.failure!).body,
               ),
+            ],
+          ],
+        ),
       ),
       const SizedBox(height: LsSpace.lg),
       Text('Collection sessions', style: LsText.section),

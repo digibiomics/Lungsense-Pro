@@ -525,6 +525,42 @@ void main() {
       );
       expect(find.text('Resume'), findsOneWidget);
     });
+
+    testWidgets('Start Session on patient detail opens the new session', (
+      t,
+    ) async {
+      http.handler = (o) {
+        final a = auth(o);
+        if (a != null) return a;
+        if (o.path == ApiEndpoints.dashboard) {
+          return MockReply(200, dashboardJson(patients: 1, sessions: 0));
+        }
+        if (o.path == ApiEndpoints.patients) {
+          return MockReply(200, pageJson([patientItemJson()]));
+        }
+        if (o.path == ApiEndpoints.patient('p-1')) {
+          return MockReply(200, patientJson());
+        }
+        if (o.path == ApiEndpoints.sessions && o.method == 'POST') {
+          return MockReply(201, sessionJson());
+        }
+        if (o.path == ApiEndpoints.sessions) {
+          return MockReply(200, pageJson([]));
+        }
+        if (o.path == ApiEndpoints.session('s-1')) {
+          return MockReply(200, sessionJson());
+        }
+        return const MockReply(404);
+      };
+      await launch(t);
+      await tap(t, nav('Patients'));
+      await tap(t, find.byKey(const Key('patient_p-1')));
+      await tap(t, find.byKey(const Key('patient_start')));
+      expect(bodyOf(ApiEndpoints.sessions, method: 'POST'), {
+        'patient_id': 'p-1',
+      });
+      expect(find.text('0 of 3 required done'), findsOneWidget);
+    });
   });
 
   group('patient check-in', () {

@@ -315,13 +315,23 @@ List<RouteBase> _doctorScreens() => [
   ),
   GoRoute(
     path: '${Routes.doctorPatient}/:id',
-    builder: (_, state) => BlocProvider(
-      create: (_) => PatientDetailCubit(
-        sl<GetPatient>(),
-        sl<CollectionRepository>(),
-        state.pathParameters['id']!,
-        events: sl<CollectionEvents>(),
-      )..load(),
+    builder: (_, state) => MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) => PatientDetailCubit(
+            sl<GetPatient>(),
+            sl<CollectionRepository>(),
+            state.pathParameters['id']!,
+            events: sl<CollectionEvents>(),
+          )..load(),
+        ),
+        BlocProvider(
+          create: (_) => StartSessionCubit(
+            sl<CollectionRepository>(),
+            events: sl<CollectionEvents>(),
+          ),
+        ),
+      ],
       child: const PatientDetailPage(),
     ),
     routes: [
