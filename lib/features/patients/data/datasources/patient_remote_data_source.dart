@@ -47,6 +47,20 @@ class PatientRemoteDataSource {
     return PatientModels.fromJson(r.data);
   });
 
+  Future<Patient> mine() => _guard(() async {
+    final r = await _dio.get<Object?>(ApiEndpoints.myPatientRecord);
+    return PatientModels.fromJson(r.data);
+  });
+
+  /// `PATCH /patients/me` (`PatientSelfUpdate`) with the consent only.
+  Future<Patient> setMyConsent(ConsentStatus status) => _guard(() async {
+    final r = await _dio.patch<Object?>(
+      ApiEndpoints.myPatientRecord,
+      data: {'consent_status': status.api},
+    );
+    return PatientModels.fromJson(r.data);
+  });
+
   Future<T> _guard<T>(Future<T> Function() call) async {
     try {
       return await call();

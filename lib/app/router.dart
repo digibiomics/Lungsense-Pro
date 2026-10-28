@@ -43,6 +43,7 @@ import '../features/password_recovery/presentation/cubit/password_recovery_cubit
 import '../features/password_recovery/presentation/pages/forgot_password_page.dart';
 import '../features/password_recovery/presentation/pages/reset_password_page.dart';
 import '../features/patient/presentation/pages/patient_home_page.dart';
+import '../features/patients/domain/repositories/patient_repository.dart';
 import '../features/patients/domain/usecases/patient_usecases.dart';
 import '../features/patients/presentation/cubit/patient_cubits.dart';
 import '../features/patients/presentation/pages/patient_detail_page.dart';
@@ -180,6 +181,9 @@ GoRouter createRouter(SessionCubit session) {
                   sl<CollectionRepository>(),
                   events: sl<CollectionEvents>(),
                 ),
+              ),
+              BlocProvider(
+                create: (_) => MyConsentCubit(sl<PatientRepository>())..load(),
               ),
             ],
             child: const PatientHomePage(),

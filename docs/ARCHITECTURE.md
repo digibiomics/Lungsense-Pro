@@ -102,6 +102,7 @@ Unknown roles or statuses never grant access. Backend authorization stays author
 | GET | /api/v1/patients?search=&limit=&offset= | – | Patient list, Start collection |
 | POST | /api/v1/patients | external_id, age_years, sex, consent_status, relevant_history, allow_duplicate | Add patient (409 possible_duplicate, KI-17) |
 | GET · PATCH | /api/v1/patients/{id} | same fields, no allow_duplicate | Patient detail · Edit |
+| GET · PATCH | /api/v1/patients/me | PATCH sends consent_status only | Patient home consent step (ADR-031) |
 | POST | /api/v1/collection/sessions | patient_id (doctor) / {} (patient) | Start collection / check-in |
 | GET | /api/v1/collection/sessions?status=&patient_id=&limit=&offset= | – | Sessions, drafts, patient detail, patient home |
 | GET · PATCH | /api/v1/collection/sessions/{id} | notes | Overview, review, detail · clinical notes |
@@ -113,7 +114,7 @@ Unknown roles or statuses never grant access. Backend authorization stays author
 | DELETE · GET | /api/v1/collection/xrays/{id} · /download-url | – | Remove X-ray · View |
 | GET | /api/v1/collection/dashboard | – | Doctor dashboard |
 
-Not used: `GET/PUT /doctors/me` (profile editing not in scope yet), `/patients/me`, `/patients/by-study-id`, `/admin/users/{id}` and `/role`, `/admin/audit-logs`, `/admin/stats` (no design), and the non-`/api/v1` Wellness routes (ADR-022).
+Not used: `GET/PUT /doctors/me` (profile editing not in scope yet), `/patients/by-study-id`, `/admin/users/{id}` and `/role`, `/admin/audit-logs`, `/admin/stats` (no design), and the non-`/api/v1` Wellness routes (ADR-022).
 
 ## Recorder state machine (`RecorderCubit`)
 

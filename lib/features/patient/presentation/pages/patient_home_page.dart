@@ -14,6 +14,8 @@ import '../../../authentication/presentation/widgets/role_page.dart';
 import '../../../collection/domain/entities/recording.dart';
 import '../../../collection/presentation/cubit/list_cubits.dart';
 import '../../../collection/presentation/widgets/session_row.dart';
+import '../../../patients/domain/entities/patient.dart';
+import '../../../patients/presentation/cubit/patient_cubits.dart';
 
 /// 25 Patient home (PatientHome.dc.html): today's check-in and recent
 /// check-ins. Starting a check-in creates a session on the server first.
@@ -25,9 +27,19 @@ class PatientHomePage extends StatelessWidget {
 
   Future<void> _start(BuildContext context) async {
     final s = await context.read<StartSessionCubit>().start();
-    if (s != null && context.mounted) {
+    if (!context.mounted) return;
+    if (s != null) {
       context.push(Routes.patientCheckInFor(s.id));
+    } else {
+      // A refusal may be the consent rule; re-read it so the consent step
+      // shows when that is the reason.
+      context.read<MyConsentCubit>().load();
     }
+  }
+
+  Future<void> _giveConsent(BuildContext context) async {
+    final ok = await context.read<MyConsentCubit>().give();
+    if (ok && context.mounted) context.read<StartSessionCubit>().reset();
   }
 
   @override
@@ -36,6 +48,7 @@ class PatientHomePage extends StatelessWidget {
     final today = now ?? DateTime.now();
     final name = user == null ? '' : firstName(user);
     final starting = context.watch<StartSessionCubit>().state;
+    final consent = context.watch<MyConsentCubit>().state;
     return BlocBuilder<PatientHomeCubit, PatientHomeState>(
       builder: (context, state) {
         final cubit = context.read<PatientHomeCubit>();
@@ -115,6 +128,11 @@ class PatientHomePage extends StatelessWidget {
                       onPressed: () =>
                           context.push(Routes.patientCheckInFor(done.id)),
                     )
+                  else if (consent.needed)
+                    _ConsentStep(
+                      state: consent,
+                      onGive: () => _giveConsent(context),
+                    )
                   else if (draft != null)
                     LsButton(
                       key: const Key('checkin_continue'),
@@ -138,7 +156,7 @@ class PatientHomePage extends StatelessWidget {
                     textAlign: TextAlign.center,
                     style: LsText.helper,
                   ),
-                  if (starting.failure != null) ...[
+                  if (starting.failure != null && !consent.needed) ...[
                     const SizedBox(height: LsSpace.sm),
                     LsBanner(
                       tone: LsBannerTone.error,
@@ -204,6 +222,69 @@ class PatientHomePage extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+/// Shown instead of "Start check-in" while the patient's record has no
+/// research consent: the server refuses new check-ins until it is given.
+class _ConsentStep extends StatefulWidget {
+  const _ConsentStep({required this.state, required this.onGive});
+
+  final MyConsentState state;
+  final VoidCallback onGive;
+
+  @override
+  State<_ConsentStep> createState() => _ConsentStepState();
+}
+
+class _ConsentStepState extends State<_ConsentStep> {
+  bool _agreed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = widget.state;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        LsBanner(
+          tone: LsBannerTone.info,
+          title: s.consent == ConsentStatus.withdrawn
+              ? 'You withdrew your research consent.'
+              : 'Your research consent is needed first.',
+          body:
+              'Check-ins are collected for a research study, so your '
+              'consent is recorded before your first check-in.',
+        ),
+        const SizedBox(height: LsSpace.sm),
+        LsCheckboxTile(
+          key: const Key('checkin_consent'),
+          value: _agreed,
+          onChanged: (v) {
+            if (!s.saving) setState(() => _agreed = v);
+          },
+          child: const Text(
+            'I agree to take part in the research study and for my '
+            'recordings and answers to be used for research.',
+          ),
+        ),
+        const SizedBox(height: LsSpace.sm),
+        LsButton(
+          key: const Key('checkin_consent_give'),
+          label: 'Give consent',
+          loading: s.saving,
+          loadingLabel: 'Saving…',
+          onPressed: _agreed ? widget.onGive : null,
+        ),
+        if (s.failure != null) ...[
+          const SizedBox(height: LsSpace.sm),
+          LsBanner(
+            tone: LsBannerTone.error,
+            title: 'Consent not saved.',
+            body: FailureMessages.generic(s.failure!).body,
+          ),
+        ],
+      ],
     );
   }
 }

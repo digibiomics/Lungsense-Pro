@@ -557,5 +557,73 @@ void main() {
       expect(find.byKey(const Key('checkin_start')), findsNothing);
       expect(find.text('Not finished'), findsOneWidget);
     });
+
+    testWidgets('consent is recorded before the first check-in', (t) async {
+      var consent = 'not_recorded';
+      http.handler = (o) {
+        final a = auth(o, role: 'patient');
+        if (a != null) return a;
+        if (o.path == ApiEndpoints.myPatientRecord && o.method == 'PATCH') {
+          consent = 'given';
+          return MockReply(200, patientJson(consent: consent));
+        }
+        if (o.path == ApiEndpoints.myPatientRecord) {
+          return MockReply(200, patientJson(consent: consent));
+        }
+        if (o.path == ApiEndpoints.sessions) {
+          return MockReply(200, pageJson([]));
+        }
+        return const MockReply(404);
+      };
+      await launch(t);
+      expect(
+        find.textContaining('Your research consent is needed first.'),
+        findsOne,
+      );
+      expect(find.byKey(const Key('checkin_start')), findsNothing);
+
+      // Nothing is sent until the box is ticked.
+      await tap(t, find.byKey(const Key('checkin_consent_give')));
+      expect(http.requests.any((r) => r.method == 'PATCH'), isFalse);
+
+      await tap(t, find.byKey(const Key('checkin_consent')));
+      await tap(t, find.byKey(const Key('checkin_consent_give')));
+      expect(bodyOf(ApiEndpoints.myPatientRecord, method: 'PATCH'), {
+        'consent_status': 'given',
+      });
+      expect(find.byKey(const Key('checkin_consent')), findsNothing);
+      expect(find.byKey(const Key('checkin_start')), findsOneWidget);
+    });
+
+    testWidgets('a consent refusal on start shows the consent step', (t) async {
+      var meCalls = 0;
+      http.handler = (o) {
+        final a = auth(o, role: 'patient');
+        if (a != null) return a;
+        if (o.path == ApiEndpoints.myPatientRecord) {
+          // The first read fails, so the app does not know yet.
+          return meCalls++ == 0
+              ? const MockReply(404)
+              : MockReply(200, patientJson(consent: 'withdrawn'));
+        }
+        if (o.path == ApiEndpoints.sessions && o.method == 'POST') {
+          return const MockReply(403, {
+            'detail':
+                'Research consent must be recorded before collecting data.',
+          });
+        }
+        if (o.path == ApiEndpoints.sessions) {
+          return MockReply(200, pageJson([]));
+        }
+        return const MockReply(404);
+      };
+      await launch(t);
+      await tap(t, find.byKey(const Key('checkin_start')));
+      expect(
+        find.textContaining('You withdrew your research consent.'),
+        findsOne,
+      );
+      expect(find.textContaining('Check-in not started.'), findsNothing);
+    });
   });
 }

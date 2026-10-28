@@ -21,4 +21,11 @@ class PatientRepositoryImpl implements PatientRepository {
   @override
   Future<Patient> update(String id, PatientInput input) =>
       _remote.update(id, input);
+
+  @override
+  Future<Patient> mine() => _remote.mine();
+
+  @override
+  Future<Patient> setMyConsent(ConsentStatus status) =>
+      _remote.setMyConsent(status);
 }

@@ -47,6 +47,11 @@ class StartSessionCubit extends Cubit<StartSessionState> {
       return null;
     }
   }
+
+  /// Clears an earlier failure once its cause is fixed.
+  void reset() {
+    if (!state.starting) emit(const StartSessionState());
+  }
 }
 
 // ------------------------------------------------------------ Session list

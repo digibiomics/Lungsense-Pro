@@ -34,6 +34,7 @@ class ApiEndpoints {
 
   // Patients
   static const String patients = '$_p/patients';
+  static const String myPatientRecord = '$_p/patients/me';
   static String patient(String id) => '$_p/patients/${_e(id)}';
   static String patientSessions(String id) => '$_p/patients/${_e(id)}/sessions';
 

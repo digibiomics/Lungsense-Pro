@@ -8,6 +8,7 @@ import '../../../collection/domain/entities/collection_session.dart';
 import '../../../collection/domain/repositories/collection_repository.dart';
 import '../../../collection/presentation/cubit/collection_events.dart';
 import '../../domain/entities/patient.dart';
+import '../../domain/repositories/patient_repository.dart';
 import '../../domain/usecases/patient_usecases.dart';
 
 // -------------------------------------------------------------- Patient list
@@ -312,5 +313,70 @@ class PatientDetailCubit extends Cubit<PatientDetailState> {
   Future<void> close() async {
     await _sub?.cancel();
     return super.close();
+  }
+}
+
+// ------------------------------------------------------- Patient's consent
+
+class MyConsentState extends Equatable {
+  const MyConsentState({
+    this.consent,
+    this.loading = true,
+    this.saving = false,
+    this.failure,
+  });
+
+  /// The patient's own `consent_status`; null while unknown (not loaded, or
+  /// `GET /patients/me` failed), when check-in stays available as before.
+  final ConsentStatus? consent;
+  final bool loading;
+  final bool saving;
+
+  /// Why the last attempt to record consent failed.
+  final Failure? failure;
+
+  /// The server refuses new check-ins until consent is given.
+  bool get needed => consent != null && consent != ConsentStatus.given;
+
+  @override
+  List<Object?> get props => [consent, loading, saving, failure?.kind];
+}
+
+/// The signed-in patient's research consent on Patient home. Collection
+/// sessions need `consent_status: given` on the patient's record, which a
+/// patient records with `PATCH /patients/me`.
+class MyConsentCubit extends Cubit<MyConsentState> {
+  MyConsentCubit(this._repo) : super(const MyConsentState());
+
+  final PatientRepository _repo;
+
+  Future<void> load() async {
+    emit(MyConsentState(consent: state.consent));
+    try {
+      final p = await _repo.mine();
+      if (!isClosed) emit(MyConsentState(consent: p.consent, loading: false));
+    } on Failure {
+      if (!isClosed) {
+        emit(MyConsentState(consent: state.consent, loading: false));
+      }
+    }
+  }
+
+  /// Returns true once the server has recorded the consent.
+  Future<bool> give() async {
+    if (state.saving) return false;
+    emit(MyConsentState(consent: state.consent, loading: false, saving: true));
+    try {
+      final p = await _repo.setMyConsent(ConsentStatus.given);
+      if (!isClosed) emit(MyConsentState(consent: p.consent, loading: false));
+      return p.consent == ConsentStatus.given;
+    } on Failure catch (f) {
+      if (!isClosed) {
+        emit(
+          MyConsentState(consent: state.consent, loading: false, failure: f),
+        );
+      }
+      return false;
+    }
   }
 }
