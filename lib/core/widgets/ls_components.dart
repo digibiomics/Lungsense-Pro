@@ -161,33 +161,142 @@ class LsPanel extends StatelessWidget {
   }
 }
 
-/// Label/value row used in Profile and AdminReview `<dl>` lists.
+/// Label/value row used in Profile, AdminReview, SessionDetail and
+/// SubmitResult `<dl>` lists (`justify-content: space-between`).
+///
+/// When label and value fit on one line the value sits flush right, so every
+/// value in a panel shares the same right edge. When they don't (notes, IDs,
+/// long institutions) the value drops under the label, left-aligned and full
+/// width, instead of wrapping ragged in half the row. [stacked] forces that.
 class LsKeyValueRow extends StatelessWidget {
-  const LsKeyValueRow({super.key, required this.label, required this.value});
+  const LsKeyValueRow({
+    super.key,
+    required this.label,
+    required this.value,
+    this.stacked = false,
+  });
   final String label;
   final String value;
+  final bool stacked;
+
+  static const _gap = LsSpace.sm;
 
   @override
   Widget build(BuildContext context) {
+    final labelStyle = LsText.label.copyWith(
+      fontWeight: FontWeight.w400,
+      color: AppColors.textSecondary,
+    );
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Long labels (symptom names) wrap instead of overflowing.
-          Flexible(
-            child: Text(
-              label,
-              style: LsText.label.copyWith(
-                fontWeight: FontWeight.w400,
-                color: AppColors.textSecondary,
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final scaler = MediaQuery.textScalerOf(context);
+          double width(String text, TextStyle style) {
+            final p = TextPainter(
+              text: TextSpan(text: text, style: style),
+              textDirection: Directionality.of(context),
+              textScaler: scaler,
+              maxLines: 1,
+            )..layout();
+            final w = p.width;
+            p.dispose();
+            return w;
+          }
+
+          final oneLine =
+              !stacked &&
+              !value.contains('\n') &&
+              width(label, labelStyle) + _gap + width(value, LsText.label) <=
+                  constraints.maxWidth;
+          if (oneLine) {
+            return Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(label, style: labelStyle),
+                const SizedBox(width: _gap),
+                Expanded(
+                  child: Text(
+                    value,
+                    key: const ValueKey('ls_kv_value'),
+                    textAlign: TextAlign.end,
+                    style: LsText.label,
+                  ),
+                ),
+              ],
+            );
+          }
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(label, style: labelStyle),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                key: const ValueKey('ls_kv_value'),
+                style: LsText.label,
               ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Two-column fact grid (PatientDetail `<dl>`): label above value, each
+/// cell half the width; [wide] entries span both columns underneath.
+class LsFactGrid extends StatelessWidget {
+  const LsFactGrid({super.key, required this.facts, this.wide = const []});
+  final List<(String, String)> facts;
+  final List<(String, String)> wide;
+
+  @override
+  Widget build(BuildContext context) {
+    Widget cell((String, String) f) => Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(f.$1, style: LsText.helper),
+        const SizedBox(height: 2),
+        Text(
+          f.$2,
+          style: LsText.bodySmall.copyWith(fontWeight: FontWeight.w500),
+        ),
+      ],
+    );
+
+    final rows = <Widget>[
+      for (var i = 0; i < facts.length; i += 2)
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(child: cell(facts[i])),
+            const SizedBox(width: LsSpace.sm),
+            Expanded(
+              child: i + 1 < facts.length
+                  ? cell(facts[i + 1])
+                  : const SizedBox.shrink(),
             ),
-          ),
-          const SizedBox(width: LsSpace.sm),
-          Expanded(
-            child: Text(value, textAlign: TextAlign.right, style: LsText.label),
-          ),
+          ],
+        ),
+      for (final f in wide) cell(f),
+    ];
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border.all(color: AppColors.border),
+        borderRadius: BorderRadius.circular(LsRadius.panel),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          for (var i = 0; i < rows.length; i++) ...[
+            if (i > 0) const SizedBox(height: LsSpace.md),
+            rows[i],
+          ],
         ],
       ),
     );

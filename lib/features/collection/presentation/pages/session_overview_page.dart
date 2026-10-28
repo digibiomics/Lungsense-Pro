@@ -439,6 +439,7 @@ class SessionDetailView extends StatelessWidget {
               LsKeyValueRow(
                 label: 'Notes',
                 value: notes == null || notes.isEmpty ? 'None' : notes,
+                stacked: notes != null && notes.isNotEmpty,
               ),
               for (final x in xrays)
                 _XrayRow(

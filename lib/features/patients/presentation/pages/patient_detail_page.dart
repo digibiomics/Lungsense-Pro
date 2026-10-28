@@ -93,9 +93,8 @@ class PatientDetailPage extends StatelessWidget {
       if (p.ageYears != null) ('Age', '${p.ageYears} years'),
       if (p.sex != null) ('Sex', p.sex!.label),
       ('Research consent', p.consent.label),
-      if (p.relevantHistory != null && p.relevantHistory!.trim().isNotEmpty)
-        ('Notes', p.relevantHistory),
-    ].where((f) => f.$2 != null && f.$2!.isNotEmpty).toList();
+    ].where((f) => f.$2 != null && f.$2!.isNotEmpty).map((f) => (f.$1, f.$2!));
+    final history = p.relevantHistory?.trim();
 
     return [
       Container(
@@ -126,10 +125,10 @@ class PatientDetailPage extends StatelessWidget {
         ),
       ),
       const SizedBox(height: LsSpace.sm),
-      LsPanel(
-        children: [
-          for (final f in fields) LsKeyValueRow(label: f.$1, value: f.$2!),
-        ],
+      LsFactGrid(
+        key: const Key('patient_facts'),
+        facts: fields.toList(),
+        wide: [if (history != null && history.isNotEmpty) ('Notes', history)],
       ),
       if (p.consent != ConsentStatus.given) ...[
         const SizedBox(height: LsSpace.sm),
