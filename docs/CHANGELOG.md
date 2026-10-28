@@ -10,6 +10,7 @@ Format: [Keep a Changelog](https://keepachangelog.com). Versions follow `pubspec
 - 9 tests (draft rules, paging past hidden drafts, dashboard, remove flow).
 - Patient record fields chosen by the product owner: full name, age, gender, smoking status (required), height in cm, weight in kg and relevant history (optional). Add/Edit patient collects them (plus hospital reference and consent as before), Patient detail shows them, and patients see and edit their own on Profile ("My details", `PATCH /patients/me`). "Gender" is the API's `sex` field (male, female, other).
 - 3 tests (self-update body, record parsing, My details flow); add-patient and patient-detail tests cover the new fields.
+- Patient detail's button is now "Start Session" (also the Start session screen title). Patient search hints that it matches name, study ID or hospital ref. (the API's `search` covers these), and patient rows show the name and hospital ref.
 
 ### Fixed
 - Patient home: a completed check-in no longer hides "Start check-in". Patients can start another check-in the same day ("Start another check-in", with "View today's check-in" below); the API keeps every check-in.

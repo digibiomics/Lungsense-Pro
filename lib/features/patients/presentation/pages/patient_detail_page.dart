@@ -145,7 +145,7 @@ class PatientDetailPage extends StatelessWidget {
       const SizedBox(height: LsSpace.lg),
       LsButton(
         key: const Key('patient_start'),
-        label: 'Start new collection',
+        label: 'Start Session',
         icon: const Icon(Icons.add, size: 20),
         onPressed: p.isArchived
             ? null

@@ -16,8 +16,10 @@ import '../../../authentication/presentation/widgets/role_page.dart';
 import '../../domain/entities/patient.dart';
 import '../cubit/patient_cubits.dart';
 
-/// "54 y · Male · 1 session".
+/// "Aamir Khan · HSP-22904 · 54 y · Male · 1 session".
 String patientMeta(PatientSummary p) => [
+  if (p.fullName?.trim().isNotEmpty ?? false) p.fullName!.trim(),
+  if (p.externalId?.trim().isNotEmpty ?? false) p.externalId!.trim(),
   if (p.ageYears != null) '${p.ageYears} y',
   if (p.sex != null && p.sex != PatientSex.unknown) p.sex!.label,
   '${p.sessionCount} session${p.sessionCount == 1 ? '' : 's'}',
@@ -50,7 +52,7 @@ class PatientsPage extends StatelessWidget {
           children: [
             LsSearchField(
               fieldKey: const Key('patients_search'),
-              hint: 'Search patients',
+              hint: 'Search by name, study ID or hospital ref.',
               onChanged: cubit.search,
             ),
             const SizedBox(height: LsSpace.md),

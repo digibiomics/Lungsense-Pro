@@ -57,7 +57,7 @@ class _StartCollectionPageState extends State<StartCollectionPage> {
   Widget build(BuildContext context) {
     final start = context.watch<StartSessionCubit>().state;
     return Scaffold(
-      appBar: AppBar(title: const Text('New collection')),
+      appBar: AppBar(title: const Text('Start Session')),
       body: BlocBuilder<PatientsCubit, PatientsState>(
         builder: (context, state) {
           final cubit = context.read<PatientsCubit>();
@@ -78,7 +78,7 @@ class _StartCollectionPageState extends State<StartCollectionPage> {
               const SizedBox(height: LsSpace.md),
               LsSearchField(
                 fieldKey: const Key('start_search'),
-                hint: 'Search patients',
+                hint: 'Search by name, study ID or hospital ref.',
                 onChanged: cubit.search,
               ),
               const SizedBox(height: LsSpace.md),
