@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lungsense_pro/app/app.dart';
 import 'package:lungsense_pro/app/di.dart';
+import 'package:lungsense_pro/features/collection/domain/services/draft_visibility.dart';
 import 'package:lungsense_pro/core/network/api_endpoints.dart';
 import 'package:lungsense_pro/core/widgets/ls_bottom_nav.dart';
 import 'package:lungsense_pro/features/authentication/presentation/cubit/session_cubit.dart';
@@ -36,6 +37,7 @@ void main() {
       storage: storage,
       dio: mockDio(http),
       devices: fakeDevices(files: files, inspector: inspector),
+      hiddenDrafts: MemoryHiddenDraftsStore(),
     );
     final session = sl<SessionCubit>()..restore();
     await t.pumpWidget(LungSenseProApp(session: session));
@@ -556,6 +558,56 @@ void main() {
       expect(find.byKey(const Key('checkin_continue')), findsOneWidget);
       expect(find.byKey(const Key('checkin_start')), findsNothing);
       expect(find.text('Not finished'), findsOneWidget);
+    });
+
+    testWidgets('a draft from yesterday is not offered again', (t) async {
+      final old = sessionJson()
+        ..['started_at'] = DateTime.now()
+            .subtract(const Duration(days: 1))
+            .toUtc()
+            .toIso8601String();
+      http.handler = (o) {
+        final a = auth(o, role: 'patient');
+        if (a != null) return a;
+        if (o.path == ApiEndpoints.sessions) {
+          return MockReply(200, pageJson([old]));
+        }
+        return const MockReply(404);
+      };
+      await launch(t);
+      expect(find.text('Not done yet'), findsOneWidget);
+      expect(find.byKey(const Key('checkin_start')), findsOneWidget);
+      expect(find.byKey(const Key('checkin_continue')), findsNothing);
+    });
+
+    testWidgets('removing today\'s draft lets the patient start again', (
+      t,
+    ) async {
+      http.handler = (o) {
+        final a = auth(o, role: 'patient');
+        if (a != null) return a;
+        if (o.path == ApiEndpoints.sessions) {
+          return MockReply(200, pageJson([sessionJson()]));
+        }
+        if (o.path == ApiEndpoints.session('s-1')) {
+          return MockReply(200, sessionJson());
+        }
+        return const MockReply(404);
+      };
+      await launch(t);
+      await tap(t, find.byKey(const Key('checkin_continue')));
+      await tap(
+        t,
+        find.byKey(const Key('overview_remove'), skipOffstage: false),
+      );
+      await tap(t, find.byKey(const Key('overview_remove_confirm')));
+      expect(find.text('Not done yet'), findsOneWidget);
+      expect(find.byKey(const Key('checkin_start')), findsOneWidget);
+      expect(
+        http.requests.where((r) => r.method == 'DELETE'),
+        isEmpty,
+        reason: 'the API has no session delete; the draft is hidden locally',
+      );
     });
 
     testWidgets('consent is recorded before the first check-in', (t) async {

@@ -4,6 +4,11 @@ Format: [Keep a Changelog](https://keepachangelog.com). Versions follow `pubspec
 
 ## [Unreleased]
 
+### Added
+- "Remove draft" ("Remove this check-in" for patients) on the collection overview, with a confirm sheet. The API has no session delete (KI-25), so the draft is hidden on this device only; the server keeps it.
+- Drafts not finished on the day they started are no longer listed or offered to resume (Sessions, dashboard, Patient home); opening one shows it read-only. Overview copy now says "later today".
+- 9 tests (draft rules, paging past hidden drafts, dashboard, remove flow).
+
 ### Fixed
 - Patient check-in no longer dead-ends on "Research consent must be recorded before collecting data." Patient home reads the patient's own record (`GET /patients/me`) and, while consent is not given, shows a consent step that records it with `PATCH /patients/me` (`consent_status: given`) before Start check-in appears.
 

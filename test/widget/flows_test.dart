@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:lungsense_pro/app/app.dart';
 import 'package:lungsense_pro/app/di.dart';
+import 'package:lungsense_pro/features/collection/domain/services/draft_visibility.dart';
 import 'package:lungsense_pro/core/network/api_endpoints.dart';
 import 'package:lungsense_pro/features/authentication/presentation/cubit/session_cubit.dart';
 
@@ -25,7 +26,11 @@ void main() {
     t.view.physicalSize = const Size(390, 900);
     t.view.devicePixelRatio = 1;
     addTearDown(t.view.reset);
-    await configureDependencies(storage: storage, dio: mockDio(http));
+    await configureDependencies(
+      storage: storage,
+      dio: mockDio(http),
+      hiddenDrafts: MemoryHiddenDraftsStore(),
+    );
     final session = sl<SessionCubit>()..restore();
     await t.pumpWidget(LungSenseProApp(session: session));
     await t.pumpAndSettle();

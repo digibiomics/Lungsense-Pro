@@ -15,9 +15,11 @@ import '../features/authentication/domain/usecases/session_usecases.dart';
 import '../features/authentication/presentation/cubit/session_cubit.dart';
 import '../features/collection/data/datasources/collection_remote_data_source.dart';
 import '../features/collection/data/device/device_services_impl.dart';
+import '../features/collection/data/local/secure_hidden_drafts_store.dart';
 import '../features/collection/data/repositories/collection_repository_impl.dart';
 import '../features/collection/domain/repositories/collection_repository.dart';
 import '../features/collection/domain/services/device_services.dart';
+import '../features/collection/domain/services/draft_visibility.dart';
 import '../features/collection/presentation/cubit/collection_events.dart';
 import '../features/patients/data/datasources/patient_remote_data_source.dart';
 import '../features/patients/data/repositories/patient_repository_impl.dart';
@@ -52,12 +54,14 @@ class DeviceServices {
   );
 }
 
-/// Composition root. [storage], [dio] and [devices] are overridable for
-/// tests. With a test [dio], storage uploads use the same HTTP adapter.
+/// Composition root. [storage], [dio], [devices] and [hiddenDrafts] are
+/// overridable for tests. With a test [dio], storage uploads use the same
+/// HTTP adapter.
 Future<void> configureDependencies({
   TokenStorage? storage,
   Dio? dio,
   DeviceServices? devices,
+  HiddenDraftsStore? hiddenDrafts,
 }) async {
   await sl.reset();
 
@@ -105,6 +109,9 @@ Future<void> configureDependencies({
     ..registerSingleton<CollectionEvents>(
       CollectionEvents(),
       dispose: (e) => e.dispose(),
+    )
+    ..registerSingleton<DraftVisibility>(
+      DraftVisibility(hiddenDrafts ?? SecureHiddenDraftsStore()),
     )
     ..registerSingleton<DeviceServices>(devices ?? DeviceServices.platform())
     ..registerSingleton<SessionCubit>(

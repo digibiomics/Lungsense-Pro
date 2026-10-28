@@ -11,6 +11,7 @@ import '../../../../core/widgets/ls_sheet.dart';
 import '../../domain/entities/collection_session.dart';
 import '../../domain/entities/recording.dart';
 import '../../domain/entities/symptoms.dart';
+import '../../domain/services/draft_visibility.dart';
 import '../cubit/collection_session_cubit.dart';
 import '../widgets/collection_mode.dart';
 import '../widgets/collection_widgets.dart';
@@ -36,8 +37,12 @@ class SessionOverviewPage extends StatelessWidget {
             body: SessionLoadState(failure: state.failure, onRetry: cubit.load),
           );
         }
-        if (!s.isDraft) return SessionDetailView(session: s, mode: mode);
-        return _Overview(session: s, mode: mode, now: now ?? DateTime.now());
+        final t = now ?? DateTime.now();
+        // A draft from an earlier day can't be resumed (same-day rule).
+        if (!s.isDraft || DraftVisibility.isExpired(s.summary, t)) {
+          return SessionDetailView(session: s, mode: mode);
+        }
+        return _Overview(session: s, mode: mode, now: t);
       },
     );
   }
@@ -56,6 +61,26 @@ class _Overview extends StatelessWidget {
 
   void _open(BuildContext context, CollectionRoute r) =>
       context.push(mode.stepPath(session.id, r));
+
+  Future<void> _remove(BuildContext context) async {
+    final cubit = context.read<CollectionSessionCubit>();
+    final r = await showLsSheet<LsConfirmResult>(
+      context,
+      LsConfirmSheet(
+        title: mode.isPatient ? 'Remove this check-in?' : 'Remove this draft?',
+        body:
+            'It won\'t appear in your lists on this device and can\'t be '
+            'resumed. Anything already uploaded stays on the server as an '
+            'unfinished ${mode.isPatient ? 'check-in' : 'session'}.',
+        confirmLabel: 'Remove',
+        variant: LsButtonVariant.destructive,
+        confirmKey: const Key('overview_remove_confirm'),
+      ),
+    );
+    if (r == null || !context.mounted) return;
+    await cubit.removeDraft();
+    if (context.mounted) context.go(mode.home);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -212,10 +237,24 @@ class _Overview extends StatelessWidget {
                           ? 'Each step saves as soon as it\'s done. You can '
                                 'leave and finish this check-in later today.'
                           : 'Each step saves as soon as it\'s done. You can '
-                                'leave and resume this draft later.',
+                                'leave and resume this draft later today.',
                       textAlign: TextAlign.center,
                       style: LsText.helper,
                     ),
+                    if (context.read<CollectionSessionCubit>().canRemoveDraft)
+                      Center(
+                        child: LsLinkButton(
+                          key: const Key('overview_remove'),
+                          label: mode.isPatient
+                              ? 'Remove this check-in'
+                              : 'Remove draft',
+                          style: LsText.label.copyWith(
+                            color: AppColors.error,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          onPressed: () => _remove(context),
+                        ),
+                      ),
                   ],
                 ),
               ),

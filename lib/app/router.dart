@@ -25,6 +25,7 @@ import '../features/authentication/presentation/pages/welcome_page.dart';
 import '../features/authentication/presentation/widgets/role_scaffold.dart';
 import '../features/collection/domain/entities/recording.dart';
 import '../features/collection/domain/repositories/collection_repository.dart';
+import '../features/collection/domain/services/draft_visibility.dart';
 import '../features/collection/presentation/cubit/collection_events.dart';
 import '../features/collection/presentation/cubit/collection_session_cubit.dart';
 import '../features/collection/presentation/cubit/list_cubits.dart';
@@ -174,6 +175,7 @@ GoRouter createRouter(SessionCubit session) {
                 create: (_) => PatientHomeCubit(
                   sl<CollectionRepository>(),
                   events: sl<CollectionEvents>(),
+                  drafts: sl<DraftVisibility>(),
                 )..load(),
               ),
               BlocProvider(
@@ -195,6 +197,7 @@ GoRouter createRouter(SessionCubit session) {
             create: (_) => SessionsCubit(
               sl<CollectionRepository>(),
               events: sl<CollectionEvents>(),
+              drafts: sl<DraftVisibility>(),
             )..load(),
             child: const SessionsPage(mode: CollectionMode.patient),
           ),
@@ -211,6 +214,7 @@ GoRouter createRouter(SessionCubit session) {
             create: (_) => DashboardCubit(
               sl<CollectionRepository>(),
               events: sl<CollectionEvents>(),
+              drafts: sl<DraftVisibility>(),
             )..load(),
             child: const DoctorDashboardPage(),
           ),
@@ -231,6 +235,7 @@ GoRouter createRouter(SessionCubit session) {
             create: (_) => SessionsCubit(
               sl<CollectionRepository>(),
               events: sl<CollectionEvents>(),
+              drafts: sl<DraftVisibility>(),
             )..load(),
             child: const SessionsPage(mode: CollectionMode.doctor),
           ),
@@ -356,6 +361,7 @@ GoRoute _sessionRoute(String base, CollectionMode mode) {
         id(s),
         events: sl<CollectionEvents>(),
         opener: sl<DeviceServices>().links,
+        drafts: sl<DraftVisibility>(),
       )..load();
   GoRoute recorder(RecordingType type) => GoRoute(
     path: type == RecordingType.cough

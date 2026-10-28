@@ -7,6 +7,7 @@ import '../../../../core/errors/failure.dart';
 import '../../domain/entities/collection_session.dart';
 import '../../domain/entities/dashboard_stats.dart';
 import '../../domain/repositories/collection_repository.dart';
+import '../../domain/services/draft_visibility.dart';
 import 'collection_events.dart';
 
 // ----------------------------------------------------------- Start session
@@ -64,6 +65,7 @@ class SessionsState extends Equatable {
     this.loadingMore = false,
     this.items = const [],
     this.total = 0,
+    this.fetched = 0,
     this.filter = SessionFilter.all,
     this.failure,
   });
@@ -72,16 +74,20 @@ class SessionsState extends Equatable {
   final bool loadingMore;
   final List<SessionSummary> items;
   final int total;
+
+  /// Rows read from the server, including hidden drafts (the next offset).
+  final int fetched;
   final SessionFilter filter;
   final Failure? failure;
 
-  bool get hasMore => items.length < total;
+  bool get hasMore => fetched < total;
 
   SessionsState copyWith({
     bool? loading,
     bool? loadingMore,
     List<SessionSummary>? items,
     int? total,
+    int? fetched,
     SessionFilter? filter,
     Failure? Function()? failure,
   }) => SessionsState(
@@ -89,6 +95,7 @@ class SessionsState extends Equatable {
     loadingMore: loadingMore ?? this.loadingMore,
     items: items ?? this.items,
     total: total ?? this.total,
+    fetched: fetched ?? this.fetched,
     filter: filter ?? this.filter,
     failure: failure != null ? failure() : this.failure,
   );
@@ -99,6 +106,7 @@ class SessionsState extends Equatable {
     loadingMore,
     items,
     total,
+    fetched,
     filter,
     failure?.kind,
   ];
@@ -106,14 +114,39 @@ class SessionsState extends Equatable {
 
 /// 14 Collection history (doctor) and 26 My check-ins (patient).
 class SessionsCubit extends Cubit<SessionsState> {
-  SessionsCubit(this._repo, {CollectionEvents? events})
+  SessionsCubit(this._repo, {CollectionEvents? events, this._drafts})
     : super(const SessionsState()) {
     _sub = events?.changes.listen((_) => load());
   }
 
   final CollectionRepository _repo;
+  final DraftVisibility? _drafts;
   StreamSubscription<String>? _sub;
   int _generation = 0;
+
+  /// Pages read in a row while every row is a hidden draft.
+  static const _maxSkippedPages = 5;
+
+  /// Reads from [offset] until a page has a visible row or nothing is left.
+  Future<({List<SessionSummary> items, int total, int fetched})> _page(
+    SessionFilter f,
+    int offset,
+  ) async {
+    final items = <SessionSummary>[];
+    var fetched = offset;
+    var total = 0;
+    for (var i = 0; i < _maxSkippedPages; i++) {
+      final page = await _repo.listSessions(
+        status: _status(f),
+        offset: fetched,
+      );
+      total = page.total;
+      fetched += page.items.length;
+      items.addAll(await _drafts?.visible(page.items) ?? page.items);
+      if (items.isNotEmpty || page.items.isEmpty || fetched >= total) break;
+    }
+    return (items: items, total: total, fetched: fetched);
+  }
 
   static SessionStatus? _status(SessionFilter f) => switch (f) {
     SessionFilter.all => null,
@@ -130,10 +163,15 @@ class SessionsCubit extends Cubit<SessionsState> {
     final gen = ++_generation;
     emit(state.copyWith(loading: true, filter: f, failure: () => null));
     try {
-      final page = await _repo.listSessions(status: _status(f));
+      final page = await _page(f, 0);
       if (isClosed || gen != _generation) return;
       emit(
-        state.copyWith(loading: false, items: page.items, total: page.total),
+        state.copyWith(
+          loading: false,
+          items: page.items,
+          total: page.total,
+          fetched: page.fetched,
+        ),
       );
     } on Failure catch (e) {
       if (isClosed || gen != _generation) return;
@@ -146,16 +184,14 @@ class SessionsCubit extends Cubit<SessionsState> {
     final gen = _generation;
     emit(state.copyWith(loadingMore: true));
     try {
-      final page = await _repo.listSessions(
-        status: _status(state.filter),
-        offset: state.items.length,
-      );
+      final page = await _page(state.filter, state.fetched);
       if (isClosed || gen != _generation) return;
       emit(
         state.copyWith(
           loadingMore: false,
           items: [...state.items, ...page.items],
           total: page.total,
+          fetched: page.fetched,
         ),
       );
     } on Failure {
@@ -190,26 +226,38 @@ class DashboardState extends Equatable {
 /// 10 Doctor dashboard: counts and recent activity from
 /// `GET /collection/dashboard`, drafts from `GET /collection/sessions`.
 class DashboardCubit extends Cubit<DashboardState> {
-  DashboardCubit(this._repo, {CollectionEvents? events})
+  DashboardCubit(this._repo, {CollectionEvents? events, this._drafts})
     : super(const DashboardState()) {
     _sub = events?.changes.listen((_) => load());
   }
 
   final CollectionRepository _repo;
+  final DraftVisibility? _drafts;
   StreamSubscription<String>? _sub;
 
   static const draftsShown = 3;
+
+  /// Drafts read so enough remain after hiding removed and expired ones.
+  static const _draftsRead = 20;
 
   Future<void> load() async {
     if (state.failure != null) emit(DashboardState(stats: state.stats));
     try {
       final drafts = _repo.listSessions(
         status: SessionStatus.draft,
-        limit: draftsShown,
+        limit: _drafts == null ? draftsShown : _draftsRead,
       );
       final stats = await _repo.dashboard();
       final d = await drafts;
-      if (!isClosed) emit(DashboardState(stats: stats, drafts: d.items));
+      final shown = await _drafts?.visible(d.items) ?? d.items;
+      if (!isClosed) {
+        emit(
+          DashboardState(
+            stats: stats,
+            drafts: shown.take(draftsShown).toList(),
+          ),
+        );
+      }
     } on Failure catch (f) {
       if (!isClosed) {
         emit(
@@ -267,12 +315,13 @@ class PatientHomeState extends Equatable {
 
 /// 25 Patient home: today's check-in state and recent check-ins.
 class PatientHomeCubit extends Cubit<PatientHomeState> {
-  PatientHomeCubit(this._repo, {CollectionEvents? events})
+  PatientHomeCubit(this._repo, {CollectionEvents? events, this._drafts})
     : super(const PatientHomeState()) {
     _sub = events?.changes.listen((_) => load());
   }
 
   final CollectionRepository _repo;
+  final DraftVisibility? _drafts;
   StreamSubscription<String>? _sub;
 
   static const shown = 5;
@@ -281,7 +330,8 @@ class PatientHomeCubit extends Cubit<PatientHomeState> {
     emit(PatientHomeState(loading: true, recent: state.recent));
     try {
       final page = await _repo.listSessions(limit: shown);
-      if (!isClosed) emit(PatientHomeState(loading: false, recent: page.items));
+      final recent = await _drafts?.visible(page.items) ?? page.items;
+      if (!isClosed) emit(PatientHomeState(loading: false, recent: recent));
     } on Failure catch (f) {
       if (!isClosed) {
         emit(

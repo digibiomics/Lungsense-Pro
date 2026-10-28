@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| Last updated | 2026-10-27 |
+| Last updated | 2026-10-28 |
 | Phase | Every designed screen built against the OpenAPI snapshot |
 | Current milestone | **M9–M12 done** (user approved building everything still missing without stops) |
 | Next milestone | M13 device verification with test accounts |
@@ -16,7 +16,8 @@
 - M10 Collection flow: start collection, overview, cough and breathing recorder (limits, import check, presigned upload, server QC, retry, playback), symptoms (10 items), clinical context (notes, X-ray), review, submit result, read-only session detail.
 - M11 Session history with filters; dashboard counts, drafts, recent activity.
 - M12 Patient home (start/resume today's check-in), My check-ins, collection screens in patient mode.
-- Checks (2026-10-27, user's PC, Flutter 3.47.8): `flutter analyze` no issues; `flutter test` 157 passed, 1 skipped (live backend group).
+- Remove draft and same-day draft hiding, device-side only (ADR-032, KI-25).
+- Checks (2026-10-28, user's PC): `flutter analyze` no issues; `flutter test` 168 passed, 1 skipped (live backend group).
 
 ## In progress
 - Nothing.
@@ -27,6 +28,7 @@
 3. Patient sign-in live test stays on hold until the user provides credentials.
 
 ## Blockers / open
+- KI-25 no API to delete/cancel a session; drafts are only hidden on the device until the backend adds it.
 - KI-18 diagnosis picker has no API field; KI-19 symptom descriptors missing (product owner).
 - Google OAuth not configured on the server (KI-03); sign-in stays disabled.
 - Microphone, file picking, playback and storage upload not yet run on a device (KI-24).

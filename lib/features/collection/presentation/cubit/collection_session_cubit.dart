@@ -7,6 +7,7 @@ import '../../../../core/errors/failure.dart';
 import '../../domain/entities/collection_session.dart';
 import '../../domain/repositories/collection_repository.dart';
 import '../../domain/services/device_services.dart';
+import '../../domain/services/draft_visibility.dart';
 import 'collection_events.dart';
 
 class CollectionSessionState extends Equatable {
@@ -31,7 +32,9 @@ class CollectionSessionCubit extends Cubit<CollectionSessionState> {
     this.sessionId, {
     CollectionEvents? events,
     this._opener,
-  }) : super(const CollectionSessionState()) {
+    this._drafts,
+  }) : _events = events,
+       super(const CollectionSessionState()) {
     _sub = events?.changes.listen((id) {
       if (id == sessionId) load();
     });
@@ -40,7 +43,21 @@ class CollectionSessionCubit extends Cubit<CollectionSessionState> {
   final CollectionRepository _repo;
   final String sessionId;
   final LinkOpener? _opener;
+  final DraftVisibility? _drafts;
+  final CollectionEvents? _events;
   StreamSubscription<String>? _sub;
+
+  /// Whether this draft can be removed from the app's lists.
+  bool get canRemoveDraft =>
+      _drafts != null && (state.session?.isDraft ?? false);
+
+  /// Hides this draft on this device. The API cannot delete a session, so
+  /// the server keeps it, with any uploads, as a draft (KI-25).
+  Future<void> removeDraft() async {
+    if (!canRemoveDraft) return;
+    await _drafts!.hide(sessionId);
+    _events?.changed(sessionId);
+  }
 
   /// Opens a short-lived download link for an X-ray. False when it failed.
   Future<bool> openXray(String xrayId) async {
