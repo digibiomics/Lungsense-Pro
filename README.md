@@ -1,86 +1,112 @@
 # LungSense Pro
 
-Flutter app for doctors, patients and administrators collecting respiratory research data (cough, breathing, symptoms). Talks to the existing LungSense Pro FastAPI backend. Separate from LungSense Wellness: separate accounts, tokens and storage.
+LungSense Pro is a cross-platform mobile application for clinical respiratory research. It lets doctors, patients and study administrators capture standardised cough and breathing recordings, symptom scores and clinical context, and submit them securely to the LungSense Pro research platform.
 
-> Status: **0.2.0, every documented endpoint wired (M1–M7).** Sign-in, sign-up, email confirmation, password recovery, role areas, profile and admin doctor approvals are built and tested against mocked HTTP. **Not yet verified against the live backend** (it wasn't reachable from the build environment). Google sign-in is disabled until the server enables it. See [docs/PROJECT_STATE.md](docs/PROJECT_STATE.md) and [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md).
+The app is built with Flutter and runs on Android and iOS.
 
-## What works
+## Key features
 
-| Area | Screens |
+**For doctors**
+- Patient registry with search, paging, duplicate detection and research consent tracking
+- Guided collection sessions: cough and breathing recordings, a 10-item symptom questionnaire, clinical notes and chest X-ray upload
+- Session history with draft, completed and filtered views, plus a dashboard of recent activity
+
+**For patients**
+- Self-guided daily check-ins, with consent captured in the app
+- A personal check-in history and editable personal details
+
+**For administrators**
+- Review, approve and reject doctor registrations
+- User management, including suspension and reactivation
+
+**Platform**
+- Secure sign-in, email verification and password recovery
+- Role-based access for doctors, patients and administrators
+- Built-in recording quality checks: duration limits, level metering, server-side quality validation and retry
+- Direct-to-storage uploads with progress reporting
+
+## Technology
+
+| Area | Choice |
 |---|---|
-| Auth | Splash/session restore, Welcome, Sign in, Account status (pending/rejected/suspended) |
-| Sign-up | Doctor or patient, account details, doctor details, Check your email + resend |
-| Recovery | Forgot password (neutral), Reset with 6-digit code; Change password from Profile |
-| Patient | Home, Check-ins, Profile (collection not available yet) |
-| Doctor | Home, Patients, Sessions, Profile (collection not available yet) |
-| Admin | Doctor approvals (tabs, review, approve, reject with reason), Users (info), Profile |
-| Google | Button disabled; account-type screen ready for `role: new` users |
+| Framework | Flutter (Dart 3) |
+| State management | `flutter_bloc` |
+| Navigation | `go_router` |
+| Networking | `dio` |
+| Dependency injection | `get_it` |
+| Secure storage | `flutter_secure_storage` |
+| Audio | `record`, `just_audio` |
+| Testing | `flutter_test`, `bloc_test`, `mocktail` |
 
-## Prerequisites
+The code follows a feature-first, layered architecture (data, domain, presentation). See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details.
 
-| Tool | Version used |
-|---|---|
-| Flutter | 3.47.8 stable |
-| Dart | 3.13.7 |
-| Android SDK / Xcode | For device builds (not used in CI so far) |
+## Getting started
 
-## Setup
+### Prerequisites
+
+- Flutter SDK (stable channel) with Dart 3.13 or later
+- Android Studio with the Android SDK, and/or Xcode for iOS builds
+- Access to a LungSense Pro backend environment
+
+### Installation
 
 ```bash
-cd lungsense_pro
+git clone https://github.com/digibiomics/Lungsense-Pro.git
+cd Lungsense-Pro
 flutter pub get
 ```
 
-## Configuration
+### Configuration
 
-All settings are `--dart-define` values read in `lib/core/config/api_config.dart`. Ready-made files live in `config/`:
+The app is configured at build time with `--dart-define` values. Environment files live in the `config/` folder:
 
-| File | Use |
+| File | Purpose |
 |---|---|
-| `config/development.json` | Dev API (HTTP, documented host) |
-| `config/testing.json` | Test runs |
-| `config/production.example.json` | Template. Copy to `config/production.json` (git-ignored) and set an **HTTPS** URL |
+| `config/development.json` | Local development |
+| `config/testing.json` | Automated tests |
+| `config/production.example.json` | Template for production. Copy it to `config/production.json`, which git ignores, and fill in your values. |
 
-| Key | Default | Meaning |
-|---|---|---|
-| `API_BASE_URL` | `http://3.108.54.191` | Backend base URL (`/api/v1` is appended per endpoint) |
-| `APP_ENV` | `development` | `development` / `testing` / `production` |
-| `SUPPORT_EMAIL` | empty | Shown on rejected/suspended screens; empty hides it |
-| `GOOGLE_SIGN_IN_ENABLED` | `false` | Reserved. Has no effect yet: the Google flow isn't wired until the server enables OAuth |
+| Key | Description |
+|---|---|
+| `API_BASE_URL` | Base URL of the LungSense Pro API |
+| `APP_ENV` | `development`, `testing` or `production` |
+| `SUPPORT_EMAIL` | Support contact shown to users when an account needs attention |
+| `GOOGLE_SIGN_IN_ENABLED` | Reserved for future Google sign-in support |
 
-> **Security:** the documented API is plain HTTP. Use it for development only. Never send real credentials, OTPs, tokens or patient data over HTTP. Android allows cleartext to that host in **debug builds only**; iOS blocks it (see docs/KNOWN_ISSUES.md).
+Backend addresses and credentials are provided to authorised team members and are not published in this repository. Production builds must use an HTTPS endpoint.
 
-## Run
+### Running the app
 
 ```bash
 flutter run --dart-define-from-file=config/development.json
 ```
 
-## Checks
+## Quality checks
 
 ```bash
 dart format .
 flutter analyze
-flutter test                      # unit + widget (HTTP mocked)
-# Live API contract tests (test backend only, needs test credentials):
-flutter test --tags backend --run-skipped \
-  --dart-define=LS_BACKEND_TESTS=true \
-  --dart-define=LS_TEST_PATIENT_EMAIL=... --dart-define=LS_TEST_PATIENT_PASSWORD=...
+flutter test
 ```
 
-## Project docs
+The test suite covers unit and widget tests, with all network traffic mocked. Contract tests against a live test backend are tagged `backend` and are skipped by default.
 
-| Doc | Purpose |
+## Documentation
+
+| Document | Contents |
 |---|---|
-| [PROJECT_STATE](docs/PROJECT_STATE.md) | Where we are, next step |
-| [ROADMAP](docs/ROADMAP.md) | Milestones |
-| [TASKS](docs/TASKS.md) | Task checklist |
-| [ARCHITECTURE](docs/ARCHITECTURE.md) | Layers, auth flow, API contract, assets |
-| [FOLDER_STRUCTURE](docs/FOLDER_STRUCTURE.md) | Directory tree |
-| [DECISIONS](docs/DECISIONS.md) | ADRs |
-| [DEPENDENCIES](docs/DEPENDENCIES.md) | Packages |
-| [KNOWN_ISSUES](docs/KNOWN_ISSUES.md) | Gaps, open backend questions |
-| [CHANGELOG](docs/CHANGELOG.md) | Versions |
-| [SESSION](docs/SESSION.md) | Session log |
+| [Architecture](docs/ARCHITECTURE.md) | Layers, authentication flow and API integration |
+| [Folder structure](docs/FOLDER_STRUCTURE.md) | Project layout |
+| [Decisions](docs/DECISIONS.md) | Architecture decision records |
+| [Dependencies](docs/DEPENDENCIES.md) | Packages and why they are used |
+| [Roadmap](docs/ROADMAP.md) | Milestones |
+| [Changelog](docs/CHANGELOG.md) | Release history |
+| [Known issues](docs/KNOWN_ISSUES.md) | Open items and limitations |
 
-Design source of truth: `../Design and icons/lungsense-pro-handoff/` (read-only).
+## Data protection
+
+LungSense Pro handles health-related research data. Do not use real patient data outside approved, secured environments. Never commit credentials, tokens, environment-specific endpoints or patient information to this repository.
+
+## License
+
+Copyright © DigiBiomics. All rights reserved. This software is proprietary and may not be used, copied or distributed without written permission.
